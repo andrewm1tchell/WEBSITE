@@ -449,7 +449,7 @@ function generateCollectionIndex($collection) {
         }
 
         .container.grid-mode {
-            max-width: 1400px;
+            max-width: 1800px;
         }
 
         h1 {
@@ -748,24 +748,24 @@ function generateCollectionIndex($collection) {
         /* Grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
             margin-bottom: 40px;
         }
 
         .grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
-        }
-
-        .grid.size-medium {
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 12px;
         }
 
-        .grid.size-large {
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        .grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 14px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px;
         }
 
         .grid-item {
@@ -926,20 +926,20 @@ function generateCollectionIndex($collection) {
             }
 
             .grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 4px;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 6px;
             }
 
             .grid.size-small {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
 
             .grid.size-medium {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
 
             .grid.size-large {
-                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             }
 
             .controls {
@@ -2890,7 +2890,7 @@ function generateGridPage($collection) {
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1800px;
             margin: 0 auto;
         }
 
@@ -3009,24 +3009,24 @@ function generateGridPage($collection) {
         /* Grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
             margin-bottom: 40px;
         }
 
         .grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
-        }
-
-        .grid.size-medium {
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 12px;
         }
 
-        .grid.size-large {
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        .grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 14px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px;
         }
 
         .grid-item {
@@ -3187,20 +3187,20 @@ function generateGridPage($collection) {
             }
 
             .grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 4px;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 6px;
             }
 
             .grid.size-small {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
 
             .grid.size-medium {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
 
             .grid.size-large {
-                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             }
 
             .controls {
@@ -3463,8 +3463,9 @@ function generateGridPage($collection) {
 
         function setGridSize(size) {
             const grid = document.getElementById('grid');
-            grid.classList.remove('size-small', 'size-large');
+            grid.classList.remove('size-small', 'size-medium', 'size-large');
             if (size === 'small') grid.classList.add('size-small');
+            if (size === 'medium') grid.classList.add('size-medium');
             if (size === 'large') grid.classList.add('size-large');
 
             document.querySelectorAll('.size-toggle button').forEach(b => b.classList.remove('active'));
@@ -3477,6 +3478,8 @@ function generateGridPage($collection) {
             const saved = localStorage.getItem('gridSize_' + COLLECTION.id);
             if (saved) {
                 setGridSize(saved);
+            } else {
+                setGridSize('large');
             }
         }
 
