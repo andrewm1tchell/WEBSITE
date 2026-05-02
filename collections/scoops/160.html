@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoops #160</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #fafafa;
+            min-height: 100vh;
+            padding: 20px;
+            color: #1a1a1a;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+        }
+
+        .top-nav a {
+            font-size: 0.85em;
+            color: #666;
+            text-decoration: none;
+            background: rgba(255,255,255,0.95);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .top-nav a:hover {
+            color: #333;
+            background: #fff;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 40px auto 100px;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            font-weight: 500;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .artwork-container {
+            width: 100%;
+            height: 98vh;
+            margin: 0 auto 15px;
+        }
+
+        .artwork-container.image-only {
+            height: auto;
+            max-width: 600px;
+        }
+
+        .artwork-container img {
+            max-width: 100%;
+            max-height: 98vh;
+            height: auto;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            object-fit: contain;
+        }
+
+        .artwork-container.image-only img {
+            max-height: 600px;
+            width: 100%;
+        }
+
+        .artwork-container iframe {
+            width: 100%;
+            height: 98vh;
+            border: none;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .view-toggle button {
+            padding: 6px 14px;
+            font-size: 0.8em;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #666;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .view-toggle button:hover {
+            border-color: #999;
+            color: #333;
+        }
+
+        .view-toggle button.active {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+
+        .view-toggle.hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .view-toggle {
+                margin-top: 10px;
+            }
+        }
+
+        .loading {
+            padding: 100px;
+            color: #666;
+        }
+
+        .error {
+            padding: 40px;
+            color: #c62828;
+            background: #ffebee;
+            border-radius: 8px;
+        }
+
+        .metadata {
+            text-align: left;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 500px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 0 auto 20px;
+        }
+
+        .metadata h2 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .metadata .description {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: pre-wrap;
+            overflow: hidden;
+        }
+
+        .metadata .description a {
+            color: #1976d2;
+            word-break: break-all;
+        }
+
+        .metadata .owner-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .metadata .owner-label {
+            font-size: 0.8em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metadata .owner-address {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .attributes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .attribute {
+            background: #f5f5f5;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .attribute-type {
+            color: #999;
+            font-size: 0.75em;
+            text-transform: uppercase;
+        }
+
+        .attribute-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.85em;
+            padding-bottom: 2px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .links a:hover {
+            color: #333;
+            border-color: #333;
+        }
+
+        /* Bottom right navigation */
+        .token-nav {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.98);
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .token-nav .nav-btn {
+            font-size: 0.85em;
+            color: #333;
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        .token-nav .nav-btn:hover:not(.disabled) {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+
+        .token-nav .nav-btn.disabled {
+            color: #ccc;
+            cursor: default;
+            border-color: #eee;
+        }
+
+        .token-nav .nav-info {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin-top: 50px;
+            }
+
+            .token-nav {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                justify-content: space-between;
+            }
+
+            .artwork-container {
+                height: 90vh;
+            }
+
+            .artwork-container img {
+                max-height: 90vh;
+            }
+
+            .artwork-container iframe {
+                height: 90vh;
+            }
+        }
+
+        /* Gallery Mode */
+        body.gallery-mode {
+            padding: 0;
+            background: #000;
+        }
+
+        body.gallery-mode .top-nav,
+        body.gallery-mode h1,
+        body.gallery-mode .view-toggle,
+        body.gallery-mode .metadata,
+        body.gallery-mode .links,
+        body.gallery-mode .token-nav {
+            display: none !important;
+        }
+
+        body.gallery-mode .container {
+            margin: 0;
+            padding: 0;
+            max-width: 100%;
+        }
+
+        body.gallery-mode .artwork-container {
+            height: 100vh;
+            margin: 0;
+        }
+
+        body.gallery-mode .artwork-container img {
+            max-height: 100vh;
+            box-shadow: none;
+        }
+
+        body.gallery-mode .artwork-container iframe {
+            height: 100vh;
+            box-shadow: none;
+        }
+
+        .gallery-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+        }
+
+        .gallery-toggle button {
+            font-size: 0.85em;
+            color: #666;
+            text-decoration: none;
+            background: rgba(255,255,255,0.95);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: none;
+            cursor: pointer;
+        }
+
+        .gallery-toggle button:hover {
+            color: #333;
+            background: #fff;
+        }
+
+        body.gallery-mode .gallery-toggle button {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+        }
+
+        body.gallery-mode .gallery-toggle button:hover {
+            background: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery-toggle">
+        <button onclick="toggleGalleryMode()" id="galleryBtn">Gallery Mode</button>
+    </div>
+
+    <div class="top-nav">
+        <a href="/collections/scoops/">← Scoops</a>
+        <a href="/collections/">All Collections</a>
+        <a href="/art.php">Back to Site</a>
+    </div>
+
+    <div class="container">
+        <div class="artwork-container" id="artworkContainer">
+            <div class="loading">Loading artwork...</div>
+        </div>
+
+        <h1>Scoops #160</h1>
+
+        <div class="view-toggle hidden" id="viewToggle">
+            <button id="btnImage" onclick="showImage()">Image</button>
+            <button id="btnAnimation" onclick="showAnimation()">Animation</button>
+        </div>
+
+        <div class="metadata" id="metadata" style="display:none;">
+            <h2 id="tokenName"></h2>
+            <div class="description" id="tokenDescription"></div>
+            <div class="attributes" id="attributes"></div>
+            <div class="owner-info">
+                <div class="owner-label">Owner</div>
+                <div class="owner-address" id="ownerAddress">Loading...</div>
+            </div>
+        </div>
+
+        <div class="links" id="links"></div>
+    </div>
+
+    <div class="token-nav">
+        <a href="159.html" class="nav-btn">← Prev</a>
+        <span class="nav-info">160 / 256</span>
+        <a href="161.html" class="nav-btn">Next →</a>
+    </div>
+
+    <script>
+        const TOKEN = {
+            collectionId: 'scoops',
+            collectionName: 'Scoops',
+            chain: 'tezos',
+            chainId: 1,
+            contract: 'KT1KEa8z6vWXDJrVqtMrAeDVzsvxat3kHaCE',
+            tokenId: 159,
+            displayNum: 160
+        };
+
+        const RPC_URLS = {
+            ethereum: 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd',
+            arbitrum: 'https://arb1.arbitrum.io/rpc'
+        };
+
+        const ERC721_ABI = [
+            'function tokenURI(uint256 tokenId) view returns (string)',
+            'function ownerOf(uint256 tokenId) view returns (address)'
+        ];
+
+        function shortenAddress(addr) {
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+
+        function getImageUrl(url) {
+            if (!url) return null;
+            if (url.startsWith('ipfs://')) {
+                return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
+            }
+            if (url.startsWith('ar://')) {
+                return url.replace('ar://', 'https://arweave.net/');
+            }
+            return url;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function sanitizeHtml(text) {
+            if (!text) return '';
+            // Escape HTML tags but preserve line breaks
+            const newlineRegex = new RegExp('\\n', 'g');
+            const actualNewline = new RegExp('\n', 'g');
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;')
+                .replace(newlineRegex, '<br>')
+                .replace(actualNewline, '<br>');
+        }
+
+        async function fetchMetadata(uri) {
+            if (uri.startsWith('data:application/json;base64,')) {
+                const base64 = uri.replace('data:application/json;base64,', '');
+                return JSON.parse(atob(base64));
+            }
+            if (uri.startsWith('data:application/json,')) {
+                return JSON.parse(decodeURIComponent(uri.replace('data:application/json,', '')));
+            }
+
+            let fetchUri = uri;
+            if (uri.startsWith('ipfs://')) {
+                fetchUri = uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+            }
+            if (uri.startsWith('ar://')) {
+                fetchUri = uri.replace('ar://', 'https://arweave.net/');
+            }
+
+            try {
+                const response = await fetch(fetchUri);
+                return await response.json();
+            } catch (e) {
+                // Try with CORS proxy if direct fetch fails
+                console.log('Direct fetch failed, trying proxy...');
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(fetchUri);
+                const response = await fetch(proxyUrl);
+                return await response.json();
+            }
+        }
+
+        function getExplorerUrl() {
+            if (TOKEN.chain === 'tezos') {
+                return 'https://tzkt.io/' + TOKEN.contract + '/tokens/' + TOKEN.tokenId;
+            }
+            const explorers = {
+                ethereum: 'https://etherscan.io',
+                arbitrum: 'https://arbiscan.io'
+            };
+            const base = explorers[TOKEN.chain] || 'https://etherscan.io';
+            return base + '/nft/' + TOKEN.contract + '/' + TOKEN.tokenId;
+        }
+
+        function getMarketplaceUrl() {
+            if (TOKEN.chain === 'tezos') {
+                return 'https://objkt.com/tokens/' + TOKEN.contract + '/' + TOKEN.tokenId;
+            }
+            const chains = { ethereum: 'ethereum', arbitrum: 'arbitrum' };
+            const osChain = chains[TOKEN.chain];
+            if (!osChain) return null;
+            return 'https://opensea.io/assets/' + osChain + '/' + TOKEN.contract + '/' + TOKEN.tokenId;
+        }
+
+        async function loadToken() {
+            const artworkContainer = document.getElementById('artworkContainer');
+            const metadataDiv = document.getElementById('metadata');
+            const linksDiv = document.getElementById('links');
+
+            if (TOKEN.chain === 'tezos') {
+                // Use TzKT API for Tezos
+                try {
+                    const tokenResponse = await fetch('https://api.tzkt.io/v1/tokens?contract=' + TOKEN.contract + '&tokenId=' + TOKEN.tokenId);
+                    const tokens = await tokenResponse.json();
+
+                    if (!tokens || tokens.length === 0) {
+                        artworkContainer.innerHTML = '<div class="error">Token not found</div>';
+                        return;
+                    }
+
+                    const tokenData = tokens[0];
+                    const metadata = tokenData.metadata || {};
+
+                    const holdersResponse = await fetch('https://api.tzkt.io/v1/tokens/balances?token.contract=' + TOKEN.contract + '&token.tokenId=' + TOKEN.tokenId + '&balance.gt=0');
+                    const holders = await holdersResponse.json();
+                    const owner = (holders && holders.length > 0) ? holders[0].account.address : 'Unknown';
+
+                    const imageUrl = getImageUrl(metadata.displayUri || metadata.artifactUri || metadata.thumbnailUri);
+                    const animationUrl = getImageUrl(metadata.artifactUri);
+                    window.tokenImageUrl = imageUrl;
+                    window.tokenAnimationUrl = animationUrl;
+                    window.tokenAltText = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+
+                    // Check if it's an animation (artifactUri different from displayUri and is HTML/interactive)
+                    const hasAnimation = metadata.artifactUri && metadata.displayUri && metadata.artifactUri !== metadata.displayUri;
+
+                    if (imageUrl && !hasAnimation) {
+                        artworkContainer.classList.add('image-only');
+                    }
+
+                    if (hasAnimation) {
+                        artworkContainer.innerHTML = '<iframe src="' + animationUrl + '" allowfullscreen></iframe>';
+                        // Show toggle if we have both
+                        if (imageUrl) {
+                            document.getElementById('viewToggle').classList.remove('hidden');
+                            document.getElementById('btnAnimation').classList.add('active');
+                        }
+                    } else if (imageUrl) {
+                        artworkContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + window.tokenAltText + '">';
+                    } else {
+                        artworkContainer.innerHTML = '<div class="error">No artwork found</div>';
+                    }
+
+                    document.getElementById('tokenName').textContent = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+                    document.getElementById('tokenDescription').innerHTML = sanitizeHtml(metadata.description || '');
+                    document.getElementById('ownerAddress').textContent = shortenAddress(owner);
+
+                    if (metadata.tags && metadata.tags.length > 0) {
+                        const attrsHtml = metadata.tags.map(tag =>
+                            '<div class="attribute"><div class="attribute-value">' + escapeHtml(String(tag)) + '</div></div>'
+                        ).join('');
+                        document.getElementById('attributes').innerHTML = attrsHtml;
+                    }
+
+                    metadataDiv.style.display = 'block';
+
+                    let links = [];
+                    const marketUrl = getMarketplaceUrl();
+                    if (marketUrl) links.push('<a href="' + marketUrl + '" target="_blank">Objkt</a>');
+                    links.push('<a href="' + getExplorerUrl() + '" target="_blank">TzKT</a>');
+                    linksDiv.innerHTML = links.join('');
+                } catch (error) {
+                    console.error('Error loading Tezos token:', error);
+                    artworkContainer.innerHTML = '<div class="error">Error loading token: ' + error.message + '</div>';
+                }
+                return;
+            }
+
+            try {
+                const rpcUrl = RPC_URLS[TOKEN.chain];
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const contract = new ethers.Contract(TOKEN.contract, ERC721_ABI, provider);
+
+                // Fetch tokenURI and owner in parallel
+                const [tokenURI, owner] = await Promise.all([
+                    contract.tokenURI(TOKEN.tokenId),
+                    contract.ownerOf(TOKEN.tokenId)
+                ]);
+
+                // Fetch metadata
+                const metadata = await fetchMetadata(tokenURI);
+
+                // Display artwork
+                const imageUrl = getImageUrl(metadata.image || metadata.image_url);
+                const animationUrl = getImageUrl(metadata.animation_url);
+
+                // Store URLs globally for toggle functionality
+                window.tokenImageUrl = imageUrl;
+                window.tokenAnimationUrl = animationUrl;
+                window.tokenAltText = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+
+                // Check if mobile device
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+                // Collections that should always show animation (even on mobile)
+                const alwaysAnimate = ['nokori', 'primera'];
+                const showAnimationFirst = animationUrl && (!isMobile || alwaysAnimate.includes(TOKEN.collectionId));
+
+                // Show toggle buttons on desktop if both image and animation exist
+                if (imageUrl && animationUrl && !isMobile) {
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                    if (showAnimationFirst) {
+                        document.getElementById('btnAnimation').classList.add('active');
+                    } else {
+                        document.getElementById('btnImage').classList.add('active');
+                    }
+                }
+
+                // If image only (no animation), use smaller container
+                if (imageUrl && !animationUrl) {
+                    artworkContainer.classList.add('image-only');
+                }
+
+                if (showAnimationFirst) {
+                    artworkContainer.innerHTML = '<iframe src="' + animationUrl + '" allowfullscreen></iframe>';
+                } else if (imageUrl) {
+                    artworkContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + window.tokenAltText + '">';
+                } else if (animationUrl) {
+                    // Fallback to animation if no image available
+                    artworkContainer.innerHTML = '<iframe src="' + animationUrl + '" allowfullscreen></iframe>';
+                } else {
+                    artworkContainer.innerHTML = '<div class="error">No artwork found</div>';
+                }
+
+                // Display metadata
+                document.getElementById('tokenName').textContent = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+                document.getElementById('tokenDescription').innerHTML = sanitizeHtml(metadata.description || '');
+                document.getElementById('ownerAddress').textContent = shortenAddress(owner);
+
+                // Display attributes
+                if (metadata.attributes && metadata.attributes.length > 0) {
+                    const attrsHtml = metadata.attributes.map(attr =>
+                        '<div class="attribute">' +
+                            '<div class="attribute-type">' + escapeHtml(attr.trait_type || '') + '</div>' +
+                            '<div class="attribute-value">' + escapeHtml(String(attr.value) || '') + '</div>' +
+                        '</div>'
+                    ).join('');
+                    document.getElementById('attributes').innerHTML = attrsHtml;
+                }
+
+                metadataDiv.style.display = 'block';
+
+                // Display links
+                let links = [];
+                const marketUrl = getMarketplaceUrl();
+                if (marketUrl) links.push('<a href="' + marketUrl + '" target="_blank">OpenSea</a>');
+                links.push('<a href="' + getExplorerUrl() + '" target="_blank">Block Explorer</a>');
+                linksDiv.innerHTML = links.join('');
+
+            } catch (error) {
+                console.error('Error loading token:', error);
+                artworkContainer.innerHTML = '<div class="error">Error loading token: ' + error.message + '</div>';
+            }
+        }
+
+        function showImage() {
+            if (!window.tokenImageUrl) return;
+            document.getElementById('artworkContainer').innerHTML = '<img src="' + window.tokenImageUrl + '" alt="' + window.tokenAltText + '">';
+            document.getElementById('btnImage').classList.add('active');
+            document.getElementById('btnAnimation').classList.remove('active');
+        }
+
+        function showAnimation() {
+            if (!window.tokenAnimationUrl) return;
+            document.getElementById('artworkContainer').innerHTML = '<iframe src="' + window.tokenAnimationUrl + '" allowfullscreen></iframe>';
+            document.getElementById('btnAnimation').classList.add('active');
+            document.getElementById('btnImage').classList.remove('active');
+        }
+
+        function toggleGalleryMode() {
+            document.body.classList.toggle('gallery-mode');
+            const btn = document.getElementById('galleryBtn');
+            if (document.body.classList.contains('gallery-mode')) {
+                btn.textContent = 'Exit Gallery';
+            } else {
+                btn.textContent = 'Gallery Mode';
+            }
+        }
+
+        // Press Escape to exit gallery mode
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.body.classList.contains('gallery-mode')) {
+                toggleGalleryMode();
+            }
+        });
+
+        loadToken();
+    </script>
+</body>
+</html>

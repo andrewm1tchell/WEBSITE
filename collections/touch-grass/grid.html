@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Grass - Grid View</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        :root {
+            --bg: #fafafa;
+            --bg-secondary: #fff;
+            --text: #1a1a1a;
+            --text-secondary: #666;
+            --text-tertiary: #888;
+            --text-muted: #999;
+            --text-faint: #aaa;
+            --border: #eee;
+            --border-hover: #999;
+            --nav-bg: rgba(255,255,255,0.95);
+            --nav-shadow: rgba(0,0,0,0.1);
+            --nav-text: #666;
+            --nav-hover-text: #333;
+            --nav-hover-bg: #fff;
+            --input-bg: #fff;
+            --input-border: #ddd;
+            --input-focus-border: #999;
+            --btn-bg: #fff;
+            --btn-border: #ddd;
+            --btn-text: #666;
+            --btn-hover-border: #999;
+            --btn-hover-text: #333;
+            --btn-active-bg: #333;
+            --btn-active-text: #fff;
+            --btn-active-border: #333;
+            --card-bg: #fff;
+            --card-shadow: rgba(0,0,0,0.1);
+            --highlight-bg: #f5f5f5;
+            --highlight-hover: #f0f0f0;
+            --owned-bg: #e8f5e9;
+            --owned-hover: #c8e6c9;
+            --link-border: #ccc;
+            --grid-item-bg: #f0f0f0;
+            --grid-placeholder: #f5f5f5;
+            --loading-a: #f0f0f0;
+            --loading-b: #e0e0e0;
+            --trait-bg: #fff;
+            --trait-border: #eee;
+        }
+
+        body.dark {
+            --bg: #141414;
+            --bg-secondary: #1e1e1e;
+            --text: #e0e0e0;
+            --text-secondary: #999;
+            --text-tertiary: #777;
+            --text-muted: #666;
+            --text-faint: #555;
+            --border: #333;
+            --border-hover: #666;
+            --nav-bg: rgba(30,30,30,0.95);
+            --nav-shadow: rgba(0,0,0,0.3);
+            --nav-text: #999;
+            --nav-hover-text: #e0e0e0;
+            --nav-hover-bg: #2a2a2a;
+            --input-bg: #1e1e1e;
+            --input-border: #444;
+            --input-focus-border: #666;
+            --btn-bg: #1e1e1e;
+            --btn-border: #444;
+            --btn-text: #999;
+            --btn-hover-border: #666;
+            --btn-hover-text: #e0e0e0;
+            --btn-active-bg: #e0e0e0;
+            --btn-active-text: #141414;
+            --btn-active-border: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --card-shadow: rgba(0,0,0,0.3);
+            --highlight-bg: #252525;
+            --highlight-hover: #2a2a2a;
+            --owned-bg: #1b3a1e;
+            --owned-hover: #254a28;
+            --link-border: #555;
+            --grid-item-bg: #252525;
+            --grid-placeholder: #1e1e1e;
+            --loading-a: #252525;
+            --loading-b: #333;
+            --trait-bg: #1e1e1e;
+            --trait-border: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            padding: 40px 20px;
+            padding-top: 60px;
+            color: var(--text);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .top-nav a, .top-nav button {
+            font-size: 0.85em;
+            color: var(--nav-text);
+            text-decoration: none;
+            background: var(--nav-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px var(--nav-shadow);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .top-nav a:hover, .top-nav button:hover {
+            color: var(--nav-hover-text);
+            background: var(--nav-hover-bg);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .chain-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .chain-ethereum { background: #627eea20; color: #627eea; }
+        .chain-arbitrum { background: #28a0f020; color: #28a0f0; }
+        .chain-tezos { background: #2c7df720; color: #2c7df7; }
+
+        /* Filter / Search Bar */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            font-size: 0.85em;
+            padding: 6px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            width: 250px;
+            font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+        }
+
+        .filter-btn {
+            font-size: 0.8em;
+            padding: 6px 12px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-right: 8px;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }
+
+        .filter-btn.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .size-toggle {
+            display: flex;
+            gap: 4px;
+            margin-left: 10px;
+        }
+
+        .size-toggle button {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .size-toggle button:hover {
+            border-color: #999;
+        }
+
+        .size-toggle button.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .filter-info {
+            text-align: center;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-bottom: 40px;
+        }
+
+        .grid.size-small {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 4px;
+        }
+
+        .grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .grid-item {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+            background: var(--grid-item-bg);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .grid-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .grid-item .number {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: #fff;
+            font-size: 0.75em;
+            padding: 15px 6px 4px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .grid-item:hover .number {
+            opacity: 1;
+        }
+
+        .grid-item.no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            background: var(--grid-placeholder);
+        }
+
+        .grid-item.no-image .number {
+            opacity: 1;
+            background: none;
+            position: static;
+            color: var(--text-muted);
+            padding: 0;
+        }
+
+        .grid-item.hidden {
+            display: none;
+        }
+
+        .grid-item.loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background-color: var(--loading-a); }
+            50% { background-color: var(--loading-b); }
+        }
+
+        /* Trait filter panel */
+        .trait-filters {
+            display: none;
+            background: var(--trait-bg);
+            border: 1px solid var(--trait-border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .trait-filters.open {
+            display: block;
+        }
+
+        .trait-group {
+            margin-bottom: 12px;
+        }
+
+        .trait-group-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .trait-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .trait-option {
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border: 1px solid var(--btn-border);
+            border-radius: 3px;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .trait-option:hover {
+            border-color: #999;
+        }
+
+        .trait-option.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .trait-count {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .back-link a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--link-border);
+            padding-bottom: 2px;
+            margin: 0 15px;
+        }
+
+        .back-link a:hover {
+            border-color: var(--text);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 40px 10px;
+                padding-top: 55px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 4px;
+            }
+
+            .grid.size-small {
+                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            }
+
+            .grid.size-large {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .controls {
+                gap: 6px;
+            }
+
+            .search-input {
+                width: 180px;
+            }
+
+            .top-nav {
+                flex-wrap: wrap;
+            }
+
+            .top-nav a {
+                font-size: 0.75em;
+                padding: 5px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var def = 'light';
+            if (mode === '1' || (!mode && def === 'dark')) document.body.classList.add('dark');
+        })();
+    </script>
+    <div class="top-nav">
+        <div class="top-nav-links">
+            <a href="/collections/touch-grass/">← Token List</a>
+            <a href="/collections/">All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">Back to Site</a>
+        </div>
+        <button onclick="toggleTheme()" id="themeToggle" title="Toggle dark/light mode" style="background:none !important; box-shadow:none !important; border:none; padding:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><img id="darkModeIcon" height="16" width="16" style="filter:invert(0)" src="https://andrewmitchell-art.xyz/images/dark-icon.png" alt="Light Dark Toggle"/></button>
+    </div>
+
+    <div class="container">
+        <h1>Touch Grass<span class="chain-badge chain-ethereum">ethereum</span></h1>
+        <p class="subtitle">26 tokens</p>
+
+        <div class="controls">
+            <button class="filter-btn" id="traitFilterBtn" onclick="toggleTraitFilters()" style="display:none;">Traits ▼</button>
+            <button class="filter-btn" id="clearTraitsBtn" onclick="clearTraitFilters()" style="display:none;">Clear Traits</button>
+            <div class="size-toggle" style='margin-left: 5px;'>
+                <button onclick="setGridSize('small')" id="sizeSmall">S</button>
+                <button onclick="setGridSize('medium')" id="sizeMedium">M</button>
+                <button onclick="setGridSize('large')" id="sizeLarge" class="active">L</button>
+            </div>
+        </div>
+
+        <div class="trait-filters" id="traitFilters"></div>
+        <div class="filter-info" id="filterInfo"></div>
+
+        <div class="grid" id="grid"></div>
+
+        <div class="back-link">
+            <a href="/collections/touch-grass/">← Token List</a>
+            <a href="/collections/">All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">← Back to Site</a>
+        </div>
+    </div>
+
+    <script>
+        const COLLECTION = {
+            id: 'touch-grass',
+            name: 'Touch Grass',
+            chain: 'ethereum',
+            supply: 26,
+            thumbBase: '/images/grid-thumbs/touch-grass/',
+            tokenIds: null,
+            tokenIdStart: 1,
+            enableTraits: false
+        };
+
+        const MARKETPLACE_NAME = 'OpenSea';
+
+        let allTokens = [];
+        let traitIndex = {};
+        let activeTraitFilters = {};
+        let metadataLoaded = false;
+
+        // Build grid
+        function buildGrid() {
+            const grid = document.getElementById('grid');
+            let html = '';
+            for (let i = 1; i <= COLLECTION.supply; i++) {
+                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
+                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + i + '</div>' +
+                    '</div>';
+            }
+            grid.innerHTML = html;
+        }
+
+        // Load metadata from API for filtering / searching by name
+        async function loadMetadata() {
+            try {
+                const response = await fetch('/collections/metadata-api.php?collection=' + COLLECTION.id);
+                if (!response.ok) {
+                    console.log('No cached metadata available (HTTP ' + response.status + ')');
+                    return;
+                }
+                const data = await response.json();
+                if (data.tokens && data.tokens.length > 0) {
+                    allTokens = data.tokens;
+                    metadataLoaded = true;
+                    if (COLLECTION.enableTraits) {
+                        buildTraitIndex();
+                        if (Object.keys(traitIndex).length > 0) {
+                            document.getElementById('traitFilterBtn').style.display = '';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('Metadata not available:', e.message);
+            }
+        }
+
+        function buildTraitIndex() {
+            traitIndex = {};
+            allTokens.forEach(token => {
+                const attrs = token.attributes || [];
+                attrs.forEach(attr => {
+                    const type = attr.trait_type;
+                    const value = String(attr.value);
+                    if (!type) return;
+                    if (!traitIndex[type]) traitIndex[type] = {};
+                    if (!traitIndex[type][value]) traitIndex[type][value] = [];
+                    traitIndex[type][value].push(token.displayNum);
+                });
+            });
+
+            // Build trait filter UI
+            const container = document.getElementById('traitFilters');
+            let html = '';
+            const sortedTypes = Object.keys(traitIndex).sort();
+            sortedTypes.forEach(type => {
+                const values = Object.keys(traitIndex[type]).sort();
+                html += '<div class="trait-group">';
+                html += '<div class="trait-group-title">' + escapeHtml(type) + '</div>';
+                html += '<div class="trait-options">';
+                values.forEach(value => {
+                    const count = traitIndex[type][value].length;
+                    html += '<span class="trait-option" data-type="' + escapeAttr(type) + '" data-value="' + escapeAttr(value) + '" onclick="toggleTraitFilter(this)">' +
+                        escapeHtml(value) + '<span class="trait-count">(' + count + ')</span></span>';
+                });
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(text) {
+            return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function getModeUrl(url) {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return url;
+            var newUrl = new URL(url, window.location.origin);
+            newUrl.searchParams.set('mode', mode);
+            return newUrl.pathname + newUrl.search;
+        }
+
+        function goToToken(displayNum) {
+            window.location.href = getModeUrl('/collections/' + COLLECTION.id + '/' + displayNum + '.html');
+        }
+
+        function applyFilters() {
+            const items = document.querySelectorAll('.grid-item');
+            let visibleCount = 0;
+
+            // Determine which displayNums pass trait filters
+            let traitPassSet = null;
+            const activeTypes = Object.keys(activeTraitFilters);
+            if (activeTypes.length > 0) {
+                let sets = activeTypes.map(type => {
+                    const values = activeTraitFilters[type];
+                    const combined = new Set();
+                    values.forEach(v => {
+                        (traitIndex[type][v] || []).forEach(num => combined.add(num));
+                    });
+                    return combined;
+                });
+                traitPassSet = sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+            }
+
+            items.forEach(item => {
+                const num = parseInt(item.dataset.displayNum);
+                let show = true;
+
+                if (traitPassSet && !traitPassSet.has(num)) {
+                    show = false;
+                }
+
+                if (show) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            // Update filter info
+            const filterInfo = document.getElementById('filterInfo');
+            if (Object.keys(activeTraitFilters).length > 0) {
+                filterInfo.textContent = 'Showing ' + visibleCount + ' of ' + COLLECTION.supply + ' tokens';
+                filterInfo.style.display = 'block';
+            } else {
+                filterInfo.style.display = 'none';
+            }
+        }
+
+        function toggleTraitFilters() {
+            const panel = document.getElementById('traitFilters');
+            const btn = document.getElementById('traitFilterBtn');
+            panel.classList.toggle('open');
+            btn.textContent = panel.classList.contains('open') ? 'Traits ▲' : 'Traits ▼';
+        }
+
+        function toggleTraitFilter(el) {
+            const type = el.dataset.type;
+            const value = el.dataset.value;
+            el.classList.toggle('active');
+
+            if (!activeTraitFilters[type]) activeTraitFilters[type] = [];
+
+            if (el.classList.contains('active')) {
+                activeTraitFilters[type].push(value);
+            } else {
+                activeTraitFilters[type] = activeTraitFilters[type].filter(v => v !== value);
+                if (activeTraitFilters[type].length === 0) delete activeTraitFilters[type];
+            }
+
+            updateClearButton();
+            applyFilters();
+        }
+
+        function clearTraitFilters() {
+            activeTraitFilters = {};
+            document.querySelectorAll('.trait-option.active').forEach(el => el.classList.remove('active'));
+            updateClearButton();
+            applyFilters();
+        }
+
+        function updateClearButton() {
+            const hasFilters = Object.keys(activeTraitFilters).length > 0;
+            document.getElementById('clearTraitsBtn').style.display = hasFilters ? '' : 'none';
+        }
+
+        function setGridSize(size) {
+            const grid = document.getElementById('grid');
+            grid.classList.remove('size-small', 'size-large');
+            if (size === 'small') grid.classList.add('size-small');
+            if (size === 'large') grid.classList.add('size-large');
+
+            document.querySelectorAll('.size-toggle button').forEach(b => b.classList.remove('active'));
+            document.getElementById('size' + size.charAt(0).toUpperCase() + size.slice(1)).classList.add('active');
+
+            localStorage.setItem('gridSize_' + COLLECTION.id, size);
+        }
+
+        function restoreGridSize() {
+            const saved = localStorage.getItem('gridSize_' + COLLECTION.id);
+            if (saved) {
+                setGridSize(saved);
+            }
+        }
+
+        // Initialize
+        buildGrid();
+        restoreGridSize();
+        // Metadata and filters
+        loadMetadata();
+
+        // Theme
+                function toggleTheme() {
+            var isDark = document.body.classList.toggle('dark');
+            var icon = document.getElementById('darkModeIcon');
+            if (icon) icon.style.filter = isDark ? 'invert(1)' : 'invert(0)';
+            var params = new URLSearchParams(window.location.search);
+            params.set('mode', isDark ? '1' : '0');
+            window.history.replaceState({}, '', window.location.pathname + '?' + params.toString());
+            updateLinksWithMode();
+        }
+        function initTheme() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var defaultDark = false;
+            var isDark = mode === '1' || (!mode && defaultDark);
+            if (isDark) {
+                document.body.classList.add('dark');
+            }
+            var icon = document.getElementById('darkModeIcon');
+            if (icon) icon.style.filter = isDark ? 'invert(1)' : 'invert(0)';
+            updateLinksWithMode();
+        }
+        function updateLinksWithMode() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return;
+            document.querySelectorAll('a[href]').forEach(function(link) {
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('http')) return;
+                var url = new URL(href, window.location.origin);
+                url.searchParams.set('mode', mode);
+                link.setAttribute('href', url.pathname + url.search);
+            });
+        }
+        initTheme();
+    </script>
+</body>
+</html>

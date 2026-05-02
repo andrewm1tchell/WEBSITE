@@ -1,0 +1,17 @@
+{
+  "date": "2022/06/25",
+  "image": "https://andrewmitchell-art.xyz/images/skymeadow/507.png",
+  "number": "507",
+  "external_url": "https://andrewmitchell-art.xyz/live/skymeadow/SKYMEADOW.html?hash=0xaf92d7e4c1a5f571fdb24c01756f9527098fcc04f3eec0bc271b0b3f789af6da&number=507",
+  "name": "SKY MEADOW #507",
+  "description": "Planes and vectors are intertwined into elaborate knotwork patterns that are reminiscent of a land once filled with endless forests, rivers, and wildlife. Named after a place of lush beauty nested deep in the heart of Virginia.\n\nThe code (~50,000 characters) is stored on an Ethereum smart contract called MitchellsExtension.sol (https://etherscan.io/address/0x534514948a28bc76B8F2f2f6B6C1745329375710), which can be found by calling tokenExtension on the main Sky Meadow contract (https://etherscan.io/address/0x8452ee9a2fc4e80c53b33a2b38824c7976744521). The name, unique hash, and attributes for each piece are also stored on that contract.\n\nThere is also a SkyMeadowWrapper.sol contract (https://etherscan.io/address/0xB666C3F49A462C2DDBC2bdc5A99d3828704Daa7C) which wraps MitchellsExtension.sol and an onchain p5.js library, allowing you to get the full HTML for any Sky Meadow NFT entirely onchain.",
+  "attributes": {
+    "colorWay": "Luray",
+    "flowers": "Heavy",
+    "radius": "Large",
+    "dimension": 0.75,
+    "background": "Patchwork",
+    "weave": "weave2"
+  },
+  "hash": "0xaf92d7e4c1a5f571fdb24c01756f9527098fcc04f3eec0bc271b0b3f789af6da"
+}

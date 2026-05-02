@@ -1,0 +1,328 @@
+{
+  "collections": [
+    {
+      "id": "nokori",
+      "name": "Nokori",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xF12A9C99f73ca203ec3B956E479a9E8F615C8e5F",
+      "supply": 401,
+      "tokenIdStart": 1,
+      "year": 2026,
+      "features": {
+        "visibilitySettings": true,
+        "staticImage": true,
+        "copyAsImage": true
+      },
+      "staticImagePath": "/images/Nokori_Images/{tokenId}.jpg",
+      "gridAspectRatio": "3 / 4"
+    },
+    {
+      "id": "sky-meadow",
+      "name": "Sky Meadow",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x8452ee9a2fc4e80c53b33a2b38824c7976744521",
+      "supply": 555,
+      "tokenIdStart": 1,
+      "year": 2022,
+      "animationField": "external_url",
+      "defaultView": "image",
+      "gridAspectRatio": "3 / 4"
+    },
+    {
+      "id": "primera",
+      "name": "Primera",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x9bf53d8c65f03d895dacaa776cc960e462ecb599",
+      "supply": 400,
+      "tokenIdStart": 0,
+      "year": 2021
+    },
+    {
+      "id": "durango",
+      "name": "Durango",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x3a0401641cabdcd0e695918f6d21163c4bcbc117",
+      "supply": 1,
+      "tokenIds": [2],
+      "year": 2023
+    },
+    {
+      "id": "flowers-of-alfiren",
+      "name": "Flowers of Alfiren",
+      "chain": "ethereum",
+      "chainId": 1, "contract": "0xfe0062a67615f40a7f21b6f2f446f2c15850dd7a",
+      "supply": 86,
+      "tokenIdStart": 1,
+      "year": 2023
+    },
+    {
+      "id": "memory-loss",
+      "name": "Memory Loss",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x1353fd9d3dc70d1a18149c8fb2adb4fb906de4e8",
+      "supply": 256,
+      "tokenIdStart": 13000000,
+      "year": 2023
+    },
+    {
+      "id": "butterfly-pact",
+      "name": "Butterfly Pact",
+      "chain": "arbitrum",
+      "chainId": 42161,
+      "contract": "0x47a91457a3a1f700097199fd63c039c4784384ab",
+      "supply": 95,
+      "tokenIdStart": 60000000,
+      "year": 2023
+    },
+    {
+      "id": "popup",
+      "name": "Popup",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x40ea935bff2d4e8705a9664d47ce9bbadba2b96e",
+      "supply": 114,
+      "tokenIdStart": 1,
+      "year": 2024
+    },
+    {
+      "id": "prozac-youth",
+      "name": "Prozac Youth",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x7e5029837a43c547cdcea2107a1e07e30d68c6d6",
+      "supply": 1,
+      "tokenIdStart": 4,
+      "tokenIds": [4],
+      "year": 2024,
+      "collaboration": "Tjo"
+    },
+    {
+      "id": "a-sudden-interest-in-nature",
+      "name": "A Sudden Interest in Nature",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xb932a70A57673d89f4acfFBE830E8ed7f75Fb9e0",
+      "supply": 10,
+      "tokenIds": [42507, 42903, 43308, 43385, 43535, 43542, 43586, 43961, 44628, 45668],
+      "year": 2023,
+      "platform": "superrare"
+    },
+    {
+      "id": "april-showers",
+      "name": "April Showers",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x223cfa03094d7169bd0c9345c11745cfea064005",
+      "supply": 26,
+      "tokenIdStart": 1,
+      "year": 2022,
+      "parentCollection": "a-sudden-interest-in-nature"
+    },
+    {
+      "id": "milky-way",
+      "name": "Milky Way",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xed660e1e5765c5c0bdc08b23a79dffedc2bf4f36",
+      "supply": 44,
+      "tokenIdStart": 1,
+      "year": 2022,
+      "parentCollection": "april-showers"
+    },
+    {
+      "id": "touch-grass",
+      "name": "Touch Grass",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xeccb6e6837fdb43f1ff14db95e666ca0c00f3b07",
+      "supply": 26,
+      "tokenIdStart": 1,
+      "year": 2023,
+      "parentCollection": "a-sudden-interest-in-nature"
+    },
+    {
+      "id": "play-action-pass",
+      "name": "Play Action Pass",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x3f505d613218f1cb30341b5a1dd9656855811e29",
+      "supply": 5,
+      "tokenIdStart": 1,
+      "year": 2022,
+      "parentCollection": "touch-grass"
+    },
+    {
+      "id": "flume",
+      "name": "Flume",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x1fa23513825f952afca07a603ac3f312ebee4ca9",
+      "supply": 7,
+      "tokenIdStart": 1,
+      "year": 2022
+    },
+    {
+      "id": "modulo",
+      "name": "Modulo",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xd82e522a62d1b466d66a2fec2eb52306652e7df0",
+      "supply": 128,
+      "tokenIdStart": 1,
+      "year": 2024,
+      "collaboration": "Rich Caldwell"
+    },
+    {
+      "id": "recursive-reflection",
+      "name": "Recursive Reflection",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xa20d68492a8f74d69270f7d376ac93c26f9c8979",
+      "supply": 1,
+      "tokenIdStart": 1,
+      "tokenIds": [1],
+      "year": 2023,
+      "collaboration": "Rich Caldwell"
+    },
+    {
+      "id": "moon",
+      "name": "Moon",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xfda33af4770d844dc18d8788c7bf84accfac79ad",
+      "supply": 1,
+      "tokenIdStart": 17,
+      "tokenIds": [17],
+      "year": 2023,
+      "collaboration": "omentejovem"
+    },
+    {
+      "id": "planes",
+      "name": "Planes",
+      "chain": "tezos",
+      "contract": "KT1MUpTQZNCXAZkp69ZcKS6T3hVPeRn1vPqg",
+      "supply": 3,
+      "tokenIdStart": 0,
+      "year": 2022
+    },
+    {
+      "id": "necromancer",
+      "name": "Necromancer",
+      "chain": "arbitrum",
+      "chainId": 42161,
+      "contract": "0x47a91457a3a1f700097199fd63c039c4784384ab",
+      "supply": 256,
+      "tokenIdStart": 2000000,
+      "year": 2023,
+      "defaultView": "image"
+    },
+    {
+      "id": "oscillators",
+      "name": "Oscillators",
+      "chain": "tezos",
+      "contract": "KT1U6EHmNxJTkvaWJ4ThczG4FSDaHC21ssvi",
+      "issuer": 22520,
+      "supply": 350,
+      "tokenIdStart": 0,
+      "year": 2022,
+      "platform": "fxhash",
+      "defaultView": "image"
+    },
+    {
+      "id": "as-the-wind-blows",
+      "name": "As The Wind Blows",
+      "chain": "tezos",
+      "contract": "KT1U6EHmNxJTkvaWJ4ThczG4FSDaHC21ssvi",
+      "issuer": 29135,
+      "supply": 500,
+      "tokenIdStart": 0,
+      "year": 2023,
+      "platform": "fxhash",
+      "collaboration": "Alex"
+    },
+    {
+      "id": "kinetics",
+      "name": "Kinetics",
+      "chain": "tezos",
+      "contract": "KT1KEa8z6vWXDJrVqtMrAeDVzsvxat3kHaCE",
+      "issuer": 11806,
+      "supply": 512,
+      "tokenIdStart": 0,
+      "year": 2022,
+      "platform": "fxhash"
+    },
+    {
+      "id": "triptych",
+      "name": "Triptych",
+      "chain": "tezos",
+      "contract": "KT1LjmAdYQCLBjwv4S2oFkEzyHVkomAf5MrW",
+      "supply": 2,
+      "tokenIds": [20636, 21880],
+      "year": 2022,
+      "platform": "fxhash",
+      "defaultView": "image"
+    },
+    {
+      "id": "flume-fxhash",
+      "name": "Flume",
+      "chain": "tezos",
+      "contract": "KT1U6EHmNxJTkvaWJ4ThczG4FSDaHC21ssvi",
+      "issuer": 24940,
+      "supply": 512,
+      "tokenIdStart": 0,
+      "year": 2023,
+      "platform": "fxhash",
+      "parentCollection": "flume"
+    },
+    {
+      "id": "scoops",
+      "name": "Scoops",
+      "chain": "tezos",
+      "contract": "KT1KEa8z6vWXDJrVqtMrAeDVzsvxat3kHaCE",
+      "issuer": 21361,
+      "supply": 150,
+      "tokenIdStart": 0,
+      "year": 2022,
+      "platform": "fxhash"
+    },
+    {
+      "id": "various-studies",
+      "name": "Various Studies",
+      "chain": "ethereum",
+      "chainId": 1,
+      "multiContract": true,
+      "contracts": [
+        {
+          "contract": "0xB1B641334E795ae4feB1e2e0c568A94Cf968d60d",
+          "tokenIds": [2, 3, 4, 7, 8, 9, 10, 11, 12]
+        },
+        {
+          "contract": "0xF8950EcAB85d52908c4De45A41Fc80E86322CA63",
+          "tokenIds": [1, 2, 3]
+        }
+      ],
+      "supply": 12,
+      "year": 2022,
+      "platform": "foundation"
+    },
+    {
+      "id": "decal",
+      "name": "Decal Logo for DECA",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x3758e3d6fa6e373156bf7155571ba306d83f0c77",
+      "supply": 100,
+      "tokenIdStart": 0,
+      "year": 2025
+    }
+  ],
+  "rpc": {
+    "ethereum": "https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd",
+    "arbitrum": "https://arb-mainnet.g.alchemy.com/v2/demo"
+  }
+}

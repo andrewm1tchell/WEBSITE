@@ -1,0 +1,23 @@
+{
+  "name": "ACROSS THE UNIVERSE",
+  "description": "They slither wildly as they slip away across the universe.\n\nCreated with Javascript + p5js by Andrew Mitchell in August, 2022\n\nThis is an on-chain generative 1/1 artwork. The piece is future-proof, and can always be pulled from the contract. Simply call GetScriptChunk(0x1fa23513825f952afca07a603ac3f312ebee4ca9, 1, 4) on this token's extension contract (https://etherscan.io/address/0x534514948a28bc76b8f2f2f6b6c1745329375710) to return the html for the piece.\n\nRead more about what it means to be On-Chain here https://medium.com/@mitchel1/the-rise-of-on-chain-1-1-generative-art-on-eth-7f663aa52736\n\nControls:\n\nClick to Pause\nPress F to save 2000x2000 png with grain\nPress J to save 3000x3000 png with grain and opacity\nPress D to save 2000x2000 png with grain\nPress H to save 3000x3000 png with grain\nPress S to save 2000x2000 png\nPress G to save 3000x3000 png\nTap right arrow to increase framerate\nTap left arrow to decrease framerate\n\nEach time the piece is rendered, the location and order of the colors will change. The colors themselves will never change.",
+  "image": "https://andrewmitchell-art.xyz/images/flume/5.jpg",
+  "animation_url": "https://andrewmitchell-art.xyz/live/flume/acrosstheuniverse.php",
+  "external_url": "https://andrewmitchell-art.xyz/live/flume/acrosstheuniverse.php",
+  "attributes": [
+    {
+      "trait_type": "Artist",
+      "value": "Andrew Mitchell"
+    },
+    {
+      "trait_type": "Type",
+      "value": "On-Chain"
+    },
+    {
+      "trait_type": "Script",
+      "value": "p5js"
+    }
+  ],
+  "date": "2022/08/20",
+  "aspect_ratio": "1"
+}

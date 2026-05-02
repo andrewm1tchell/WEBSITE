@@ -1,0 +1,13 @@
+# Serve files without extension as JSON
+<FilesMatch "^[0-9]+$">
+    ForceType application/json
+    Header set Content-Type "application/json"
+</FilesMatch>
+
+# Enable mod_headers if needed
+<IfModule mod_headers.c>
+    <FilesMatch "^[0-9]+$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>
+

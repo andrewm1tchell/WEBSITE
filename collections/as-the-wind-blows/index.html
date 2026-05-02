@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>As The Wind Blows - Token List</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --bg-secondary: #fff;
+            --text: #1a1a1a;
+            --text-secondary: #666;
+            --text-tertiary: #888;
+            --text-muted: #999;
+            --text-faint: #aaa;
+            --border: #eee;
+            --border-hover: #999;
+            --nav-bg: rgba(255,255,255,0.95);
+            --nav-shadow: rgba(0,0,0,0.1);
+            --nav-text: #666;
+            --nav-hover-text: #333;
+            --nav-hover-bg: #fff;
+            --input-bg: #fff;
+            --input-border: #ddd;
+            --input-focus-border: #999;
+            --btn-bg: #fff;
+            --btn-border: #ddd;
+            --btn-text: #666;
+            --btn-hover-border: #999;
+            --btn-hover-text: #333;
+            --btn-active-bg: #333;
+            --btn-active-text: #fff;
+            --btn-active-border: #333;
+            --card-bg: #fff;
+            --card-shadow: rgba(0,0,0,0.1);
+            --highlight-bg: #f5f5f5;
+            --highlight-hover: #f0f0f0;
+            --owned-bg: #e8f5e9;
+            --owned-hover: #c8e6c9;
+            --link-border: #ccc;
+            --grid-item-bg: #f0f0f0;
+            --grid-placeholder: #f5f5f5;
+            --loading-a: #f0f0f0;
+            --loading-b: #e0e0e0;
+            --trait-bg: #fff;
+            --trait-border: #eee;
+        }
+
+        body.dark {
+            --bg: #141414;
+            --bg-secondary: #1e1e1e;
+            --text: #e0e0e0;
+            --text-secondary: #999;
+            --text-tertiary: #777;
+            --text-muted: #666;
+            --text-faint: #555;
+            --border: #333;
+            --border-hover: #666;
+            --nav-bg: rgba(30,30,30,0.95);
+            --nav-shadow: rgba(0,0,0,0.3);
+            --nav-text: #999;
+            --nav-hover-text: #e0e0e0;
+            --nav-hover-bg: #2a2a2a;
+            --input-bg: #1e1e1e;
+            --input-border: #444;
+            --input-focus-border: #666;
+            --btn-bg: #1e1e1e;
+            --btn-border: #444;
+            --btn-text: #999;
+            --btn-hover-border: #666;
+            --btn-hover-text: #e0e0e0;
+            --btn-active-bg: #e0e0e0;
+            --btn-active-text: #141414;
+            --btn-active-border: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --card-shadow: rgba(0,0,0,0.3);
+            --highlight-bg: #252525;
+            --highlight-hover: #2a2a2a;
+            --owned-bg: #1b3a1e;
+            --owned-hover: #254a28;
+            --link-border: #555;
+            --grid-item-bg: #252525;
+            --grid-placeholder: #1e1e1e;
+            --loading-a: #252525;
+            --loading-b: #333;
+            --trait-bg: #1e1e1e;
+            --trait-border: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            padding: 40px 20px;
+            padding-top: 60px;
+            color: var(--text);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .top-nav a {
+            font-size: 0.85em;
+            color: var(--nav-text);
+            text-decoration: none;
+            background: var(--nav-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px var(--nav-shadow);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .top-nav a:hover {
+            color: var(--nav-hover-text);
+            background: var(--nav-hover-bg);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            transition: max-width 0.2s ease;
+        }
+
+        .container.grid-mode {
+            max-width: 1400px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .chain-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .chain-ethereum { background: #627eea20; color: #627eea; }
+        .chain-arbitrum { background: #28a0f020; color: #28a0f0; }
+        .chain-tezos { background: #2c7df720; color: #2c7df7; }
+
+        .token-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .token-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .token-list li.loading-disabled {
+            cursor: wait;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .token-list li:hover:not(.loading-disabled) {
+            background-color: var(--highlight-hover);
+        }
+
+        .token-num {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .owner {
+            color: var(--text-tertiary);
+            font-size: 0.85em;
+            font-family: monospace;
+            position: relative;
+            cursor: default;
+        }
+
+        .owner[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            right: 0;
+            top: -30px;
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            white-space: nowrap;
+            z-index: 100;
+        }
+
+        .loading-row {
+            color: var(--text-faint);
+            font-style: italic;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .back-link a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--link-border);
+            padding-bottom: 2px;
+            margin: 0 15px;
+        }
+
+        .back-link a:hover {
+            border-color: var(--text);
+        }
+
+        .contract-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.8em;
+            color: var(--text-tertiary);
+        }
+
+        .contract-info a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-family: monospace;
+        }
+
+        .contract-info a:hover {
+            color: var(--text);
+        }
+
+        /* My Tokens feature */
+        .my-tokens-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .wallet-input {
+            font-size: 0.85em;
+            padding: 6px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            width: 280px;
+            font-family: monospace;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .wallet-input:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+        }
+
+        .my-tokens-btn {
+            font-size: 0.85em;
+            color: var(--btn-text);
+            text-decoration: none;
+            background: var(--btn-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px var(--nav-shadow);
+            border: 1px solid var(--btn-border);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .my-tokens-btn:hover {
+            color: var(--btn-hover-text);
+            border-color: var(--btn-hover-border);
+        }
+
+        .my-tokens-btn.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .wallet-address {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        .my-tokens-count {
+            font-size: 0.8em;
+            color: var(--text-tertiary);
+            margin-left: 5px;
+        }
+
+        .token-list li.owned {
+            background-color: var(--owned-bg);
+        }
+
+        .token-list li.owned:hover {
+            background-color: var(--owned-hover);
+        }
+
+        .owned-badge {
+            background: #4caf50;
+            color: #fff;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+
+        .filter-info {
+            text-align: center;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        /* View Toggle */
+        .view-toggle-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .view-toggle-btn {
+            font-size: 0.85em;
+            color: var(--btn-text);
+            background: var(--btn-bg);
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid var(--btn-border);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .view-toggle-btn:hover {
+            color: var(--btn-hover-text);
+            border-color: var(--btn-hover-border);
+        }
+
+        .view-toggle-btn.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        /* Grid Controls */
+        .grid-controls {
+            display: none;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .grid-controls.active {
+            display: flex;
+        }
+
+        .size-toggle {
+            display: flex;
+            gap: 4px;
+        }
+
+        .size-toggle button {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .size-toggle button:hover {
+            border-color: var(--btn-hover-border);
+        }
+
+        .size-toggle button.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .trait-filter-btn {
+            font-size: 0.8em;
+            padding: 5px 10px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .trait-filter-btn:hover {
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-bottom: 40px;
+        }
+
+        .grid.size-small {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 4px;
+        }
+
+        .grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .grid-item {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+            background: var(--grid-item-bg);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .grid-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .grid-item .number {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: #fff;
+            font-size: 0.75em;
+            padding: 15px 6px 4px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .grid-item:hover .number {
+            opacity: 1;
+        }
+
+        .grid-item.no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            background: var(--grid-placeholder);
+        }
+
+        .grid-item.no-image .number {
+            opacity: 1;
+            background: none;
+            position: static;
+            color: var(--text-muted);
+            padding: 0;
+        }
+
+        .grid-item.hidden {
+            display: none;
+        }
+
+        .grid-item.loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background-color: var(--loading-a); }
+            50% { background-color: var(--loading-b); }
+        }
+
+        /* Trait filter panel */
+        .trait-filters {
+            display: none;
+            background: var(--trait-bg);
+            border: 1px solid var(--trait-border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .trait-filters.open {
+            display: block;
+        }
+
+        .trait-group {
+            margin-bottom: 12px;
+        }
+
+        .trait-group-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .trait-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .trait-option {
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border: 1px solid var(--btn-border);
+            border-radius: 3px;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .trait-option:hover {
+            border-color: #999;
+        }
+
+        .trait-option.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .trait-count {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .back-link a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--link-border);
+            padding-bottom: 2px;
+            margin: 0 15px;
+        }
+
+        .back-link a:hover {
+            border-color: var(--text);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 40px 10px;
+                padding-top: 55px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 4px;
+            }
+
+            .grid.size-small {
+                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            }
+
+            .grid.size-large {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .controls {
+                gap: 6px;
+            }
+
+            .search-input {
+                width: 180px;
+            }
+
+            .top-nav {
+                flex-wrap: wrap;
+            }
+
+            .top-nav a {
+                font-size: 0.75em;
+                padding: 5px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var def = 'light';
+            if (mode === '1' || (!mode && def === 'dark')) document.body.classList.add('dark');
+        })();
+    </script>
+    <div class="top-nav">
+        <div class="top-nav-links">
+            <a href="/collections/">All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">Back to Site</a>
+        </div>
+        <button onclick="toggleTheme()" id="themeToggle" title="Toggle dark/light mode" style="background:none !important; box-shadow:none !important; border:none; padding:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><img id="darkModeIcon" height="16" width="16" style="filter:invert(0)" src="https://andrewmitchell-art.xyz/images/dark-icon.png" alt="Light Dark Toggle"/></button>
+    </div>
+
+    <div class="container">
+        <h1>As The Wind Blows<span class="chain-badge chain-tezos">tezos</span></h1>
+        <p class="subtitle">500 tokens (w/ Alex)</p>
+
+        <div class="view-toggle-bar" id="viewToggleBar">
+            <button class="view-toggle-btn active" id="listViewBtn" onclick="showListView()">List</button>
+            <button class="view-toggle-btn" id="gridViewBtn" onclick="showGridView()">Grid</button>
+        </div>
+
+        <div class="my-tokens-bar">
+            <input type="text" id="walletInput" class="wallet-input" placeholder="Enter wallet address..." />
+            <button class="my-tokens-btn" id="myTokensBtn" onclick="toggleMyTokens()">My Tokens</button>
+        </div>
+
+        <div class="controls" id="gridControls" style="display:none;">
+            <button class="filter-btn" id="traitFilterBtn" onclick="toggleTraitFilters()" style="display:none;">Traits ▼</button>
+            <button class="filter-btn" id="clearTraitsBtn" onclick="clearTraitFilters()" style="display:none;">Clear Traits</button>
+            <div class="size-toggle" style='margin-left: 5px;'>
+                <button onclick="setGridSize('small')" id="sizeSmall">S</button>
+                <button onclick="setGridSize('medium')" id="sizeMedium">M</button>
+                <button onclick="setGridSize('large')" id="sizeLarge" class="active">L</button>
+            </div>
+        </div>
+
+        <div class="trait-filters" id="traitFilters"></div>
+        <div class="filter-info" id="filterInfo"></div>
+
+        <ul class="token-list" id="tokenList"></ul>
+        <div class="grid" id="grid" style="display:none;"></div>
+
+        <div class="back-link">
+            <a href="/collections/">← All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">← Back to Site</a>
+        </div>
+    </div>
+
+    <script>
+        const COLLECTION = {
+            id: 'as-the-wind-blows',
+            name: 'As The Wind Blows',
+            chain: 'tezos',
+            supply: 500,
+            thumbBase: '/images/grid-thumbs/as-the-wind-blows/',
+            tokenIds: [122396,122397,122398,122399,122400,122401,122402,122403,122404,122405,122406,122407,122408,122409,122410,122411,122412,122413,122414,122415,122416,122417,122418,122419,122420,122421,122422,122423,122424,122425,122426,122427,122428,122429,122430,122431,122432,122433,122434,122435,122436,122437,122438,122439,122440,122441,122442,122443,122444,122445,122446,122447,122448,122449,122450,122451,122452,122453,122454,122455,122456,122457,122458,122459,122460,122461,122462,122463,122464,122465,122466,122467,122468,122469,122470,122471,122472,122473,122474,122475,122476,122477,122478,122479,122480,122481,122482,122483,122484,122485,122486,122487,122488,122489,122490,122491,122492,122493,122494,122495,122496,122497,122498,122499,122500,122501,122502,122503,122504,122505,122506,122507,122508,122509,122510,122511,122513,122514,122515,122516,122517,122519,122520,122521,122522,122523,122524,122525,122526,122527,122528,122529,122530,122531,122532,122533,122534,122535,122536,122537,122538,122539,122540,122541,122542,122543,122544,122545,122546,122547,122548,122549,122550,122551,122552,122553,122554,122555,122556,122557,122558,122559,122560,122561,122562,122563,122565,122566,122567,122568,122569,122570,122571,122572,122573,122574,122575,122576,122577,122578,122579,122580,122581,122582,122583,122584,122585,122586,122587,122588,122589,122590,122591,122592,122593,122594,122595,122596,122597,122598,122599,122600,122601,122602,122603,122604,122605,122607,122608,122609,122610,122611,122612,122613,122614,122615,122617,122618,122619,122620,122621,122622,122623,122625,122626,122628,122629,122630,122632,122633,122634,122635,122636,122637,122638,122639,122640,122641,122642,122643,122644,122645,122646,122647,122648,122649,122650,122651,122652,122653,122654,122655,122656,122657,122658,122659,122660,122661,122662,122663,122664,122666,122667,122668,122669,122670,122671,122673,122675,122676,122677,122678,122679,122680,122681,122682,122683,122684,122685,122686,122687,122688,122689,122690,122691,122692,122693,122694,122695,122696,122697,122698,122699,122700,122701,122702,122703,122704,122705,122707,122708,122710,122711,122712,122713,122714,122715,122716,122717,122719,122720,122721,122722,122724,122725,122726,122727,122728,122729,122730,122731,122732,122733,122734,122735,122736,122737,122738,122739,122740,122741,122742,122743,122744,122745,122746,122747,122748,122749,122750,122751,122752,122753,122754,122755,122756,122757,122758,122759,122760,122761,122762,122763,122765,122766,122767,122768,122769,122770,122771,122772,122773,122774,122775,122776,122777,122778,122779,122780,122781,122782,122783,122784,122785,122786,122787,122788,122789,122790,122791,122792,122793,122794,122795,122796,122797,122798,122799,122800,122801,122802,122803,122804,122805,122807,122808,122809,122810,122811,122812,122813,122814,122815,122816,122817,122818,122819,122820,122821,122822,122823,122824,122825,122826,122827,122828,122829,122830,122831,122833,122834,122835,122836,122837,122838,122839,122840,122841,122842,122843,122844,122845,122846,122847,122848,122849,122850,122851,122852,122853,122854,122855,122857,122858,122859,122860,122861,122862,122863,122864,122865,122866,122867,122868,122869,122870,122871,122872,122873,122874,122875,122876,122877,122878,122879,122880,122881,122882,122883,122884,122885,122886,122887,122888,122889,122890,122891,122892,122893,122902,122922,122930,122951,122967,122999,123080,123195,135411,135414,135501,135502,135506,135520,135522,135525,135526,135527,135528,135530,135532],
+            tokenIdStart: 0,
+            enableTraits: false
+        };
+
+        const HAS_GRID = true;
+        const MARKETPLACE_NAME = 'Objkt';
+        const WALLET_CACHE_KEY = 'connectedWallet';
+
+        let allTokens = [];
+        let traitIndex = {};
+        let activeTraitFilters = {};
+        let metadataLoaded = false;
+        let currentView = 'list';
+        let gridBuilt = false;
+        let myTokensOnly = false;
+        let ownedTokens = [];
+
+        // Build list view
+        function buildListView() {
+            const tokenList = document.getElementById('tokenList');
+            let html = '';
+            for (let i = 1; i <= COLLECTION.supply; i++) {
+                html += '<li id="token-' + i + '" onclick="goToToken(' + i + ')">' +
+                    '<span class="token-num">#' + i + '</span>' +
+                    '<span class="owner">—</span>' +
+                    '</li>';
+            }
+            tokenList.innerHTML = html;
+            // Load owners after building list
+            loadOwners();
+        }
+
+        // Load and display all token owners
+        function loadOwners() {
+            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.owners) {
+                        Object.entries(data.owners).forEach(([displayNum, owner]) => {
+                            const li = document.getElementById('token-' + displayNum);
+                            if (li) {
+                                const ownerSpan = li.querySelector('.owner');
+                                if (ownerSpan && owner) {
+                                    const shortAddr = owner.slice(0, 6) + '...' + owner.slice(-4);
+                                    ownerSpan.textContent = shortAddr;
+                                    ownerSpan.title = owner;
+                                }
+                            }
+                        });
+                    }
+                })
+                .catch(e => {
+                    console.log('Could not load owners:', e.message);
+                });
+        }
+
+        // Build grid view (lazy - only when first switching to grid)
+        function buildGridView() {
+            if (gridBuilt) return;
+            const grid = document.getElementById('grid');
+            let html = '';
+            for (let i = 1; i <= COLLECTION.supply; i++) {
+                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
+                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + i + '</div>' +
+                    '</div>';
+            }
+            grid.innerHTML = html;
+            gridBuilt = true;
+        }
+
+        // View toggle functions
+        function showListView() {
+            currentView = 'list';
+            document.getElementById('tokenList').style.display = '';
+            document.getElementById('grid').style.display = 'none';
+            document.getElementById('gridControls').style.display = 'none';
+            document.querySelector('.my-tokens-bar').style.display = '';
+            document.getElementById('listViewBtn').classList.add('active');
+            document.getElementById('gridViewBtn').classList.remove('active');
+            document.querySelector('.container').classList.remove('grid-mode');
+            localStorage.setItem('collectionView_' + COLLECTION.id, 'list');
+        }
+
+        function showGridView() {
+            if (!HAS_GRID) return;
+            currentView = 'grid';
+            buildGridView();
+            document.getElementById('tokenList').style.display = 'none';
+            document.getElementById('grid').style.display = '';
+            document.getElementById('gridControls').style.display = 'flex';
+            document.querySelector('.my-tokens-bar').style.display = 'none';
+            document.getElementById('listViewBtn').classList.remove('active');
+            document.getElementById('gridViewBtn').classList.add('active');
+            document.querySelector('.container').classList.add('grid-mode');
+            localStorage.setItem('collectionView_' + COLLECTION.id, 'grid');
+        }
+
+        function restoreViewPreference() {
+            if (!HAS_GRID) {
+                document.getElementById('gridViewBtn').style.display = 'none';
+                return;
+            }
+            const saved = localStorage.getItem('collectionView_' + COLLECTION.id);
+            if (saved === 'grid') {
+                showGridView();
+            }
+        }
+
+        // My Tokens functionality
+        function toggleMyTokens() {
+            const btn = document.getElementById('myTokensBtn');
+            const input = document.getElementById('walletInput');
+            let walletAddr = input.value.trim();
+
+            if (!walletAddr) {
+                walletAddr = localStorage.getItem(WALLET_CACHE_KEY);
+                if (walletAddr) {
+                    input.value = walletAddr;
+                }
+            }
+
+            if (!walletAddr) {
+                alert('Please enter your wallet address');
+                input.focus();
+                return;
+            }
+
+            localStorage.setItem(WALLET_CACHE_KEY, walletAddr);
+
+            myTokensOnly = !myTokensOnly;
+            btn.classList.toggle('active', myTokensOnly);
+
+            if (ownedTokens.length === 0 && myTokensOnly) {
+                loadOwnedTokens(walletAddr);
+            } else {
+                filterTokenList();
+            }
+        }
+
+        function loadOwnedTokens(walletAddr) {
+            const btn = document.getElementById('myTokensBtn');
+            btn.textContent = 'Loading...';
+
+            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.owners) {
+                        ownedTokens = [];
+                        Object.entries(data.owners).forEach(([displayNum, owner]) => {
+                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                                ownedTokens.push(parseInt(displayNum));
+                            }
+                        });
+
+                        if (ownedTokens.length > 0) {
+                            btn.textContent = 'My Tokens (' + ownedTokens.length + ')';
+                        } else {
+                            btn.textContent = 'No tokens found';
+                            setTimeout(() => { btn.textContent = 'My Tokens'; }, 2000);
+                        }
+
+                        filterTokenList();
+                    }
+                })
+                .catch(e => {
+                    console.error('Error loading owners:', e);
+                    btn.textContent = 'Error';
+                    setTimeout(() => { btn.textContent = 'My Tokens'; }, 2000);
+                });
+        }
+
+        function filterTokenList() {
+            const items = document.querySelectorAll('#tokenList li');
+            items.forEach((item, index) => {
+                const displayNum = index + 1;
+                const isOwned = ownedTokens.includes(displayNum);
+
+                if (myTokensOnly && !isOwned) {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = '';
+                }
+
+                if (isOwned) {
+                    item.classList.add('owned');
+                } else {
+                    item.classList.remove('owned');
+                }
+            });
+        }
+
+        function getModeUrl(url) {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return url;
+            var newUrl = new URL(url, window.location.origin);
+            newUrl.searchParams.set('mode', mode);
+            return newUrl.pathname + newUrl.search;
+        }
+
+        function goToToken(displayNum) {
+            window.location.href = getModeUrl('/collections/' + COLLECTION.id + '/' + displayNum + '.html');
+        }
+
+        function applyGridFilters() {
+            const items = document.querySelectorAll('.grid-item');
+            let visibleCount = 0;
+
+            let traitPassSet = null;
+            const activeTypes = Object.keys(activeTraitFilters);
+            if (activeTypes.length > 0) {
+                let sets = activeTypes.map(type => {
+                    const values = activeTraitFilters[type];
+                    const combined = new Set();
+                    values.forEach(v => {
+                        (traitIndex[type][v] || []).forEach(num => combined.add(num));
+                    });
+                    return combined;
+                });
+                traitPassSet = sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+            }
+
+            items.forEach(item => {
+                const num = parseInt(item.dataset.displayNum);
+                let show = true;
+
+                if (traitPassSet && !traitPassSet.has(num)) {
+                    show = false;
+                }
+
+                if (show) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            const filterInfo = document.getElementById('filterInfo');
+            if (Object.keys(activeTraitFilters).length > 0) {
+                filterInfo.textContent = 'Showing ' + visibleCount + ' of ' + COLLECTION.supply + ' tokens';
+                filterInfo.style.display = 'block';
+            } else {
+                filterInfo.style.display = 'none';
+            }
+        }
+
+        // Load metadata from API
+        async function loadMetadata() {
+            try {
+                const response = await fetch('/collections/metadata-api.php?collection=' + COLLECTION.id);
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data.tokens && data.tokens.length > 0) {
+                    allTokens = data.tokens;
+                    metadataLoaded = true;
+                    if (COLLECTION.enableTraits) {
+                        buildTraitIndex();
+                        var traitBtn = document.getElementById('traitFilterBtn');
+                        if (traitBtn && Object.keys(traitIndex).length > 0) {
+                            traitBtn.style.display = '';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('Metadata not available:', e.message);
+            }
+        }
+
+        function buildTraitIndex() {
+            traitIndex = {};
+            allTokens.forEach(token => {
+                const attrs = token.attributes || [];
+                attrs.forEach(attr => {
+                    const type = attr.trait_type;
+                    const value = String(attr.value);
+                    if (!type) return;
+                    if (!traitIndex[type]) traitIndex[type] = {};
+                    if (!traitIndex[type][value]) traitIndex[type][value] = [];
+                    traitIndex[type][value].push(token.displayNum);
+                });
+            });
+
+            const container = document.getElementById('traitFilters');
+            if (!container) return;
+            let html = '';
+            const sortedTypes = Object.keys(traitIndex).sort();
+            sortedTypes.forEach(type => {
+                const values = Object.keys(traitIndex[type]).sort();
+                html += '<div class="trait-group">';
+                html += '<div class="trait-group-title">' + escapeHtml(type) + '</div>';
+                html += '<div class="trait-options">';
+                values.forEach(value => {
+                    const count = traitIndex[type][value].length;
+                    html += '<span class="trait-option" data-type="' + escapeAttr(type) + '" data-value="' + escapeAttr(value) + '" onclick="toggleTraitFilter(this)">' +
+                        escapeHtml(value) + '<span class="trait-count">(' + count + ')</span></span>';
+                });
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(text) {
+            return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function toggleTraitFilters() {
+            const panel = document.getElementById('traitFilters');
+            const btn = document.getElementById('traitFilterBtn');
+            if (!panel || !btn) return;
+            panel.classList.toggle('open');
+            btn.textContent = panel.classList.contains('open') ? 'Traits ▲' : 'Traits ▼';
+        }
+
+        function toggleTraitFilter(el) {
+            const type = el.dataset.type;
+            const value = el.dataset.value;
+            el.classList.toggle('active');
+
+            if (!activeTraitFilters[type]) activeTraitFilters[type] = [];
+
+            if (el.classList.contains('active')) {
+                activeTraitFilters[type].push(value);
+            } else {
+                activeTraitFilters[type] = activeTraitFilters[type].filter(v => v !== value);
+                if (activeTraitFilters[type].length === 0) delete activeTraitFilters[type];
+            }
+
+            updateClearButton();
+            applyGridFilters();
+        }
+
+        function clearTraitFilters() {
+            activeTraitFilters = {};
+            document.querySelectorAll('.trait-option.active').forEach(el => el.classList.remove('active'));
+            updateClearButton();
+            applyGridFilters();
+        }
+
+        function updateClearButton() {
+            const btn = document.getElementById('clearTraitsBtn');
+            if (!btn) return;
+            const hasFilters = Object.keys(activeTraitFilters).length > 0;
+            btn.style.display = hasFilters ? '' : 'none';
+        }
+
+        function setGridSize(size) {
+            const grid = document.getElementById('grid');
+            if (!grid) return;
+            grid.classList.remove('size-small', 'size-medium', 'size-large');
+            grid.classList.add('size-' + size);
+
+            document.querySelectorAll('.size-toggle button').forEach(b => b.classList.remove('active'));
+            const sizeBtn = document.getElementById('size' + size.charAt(0).toUpperCase() + size.slice(1));
+            if (sizeBtn) sizeBtn.classList.add('active');
+
+            localStorage.setItem('gridSize_' + COLLECTION.id, size);
+        }
+
+        function restoreGridSize() {
+            const saved = localStorage.getItem('gridSize_' + COLLECTION.id);
+            if (saved) {
+                setGridSize(saved);
+            } else {
+                setGridSize('large');
+            }
+        }
+
+        // Initialize
+        (function init() {
+            // Restore wallet address
+            const savedWallet = localStorage.getItem(WALLET_CACHE_KEY);
+            if (savedWallet) {
+                document.getElementById('walletInput').value = savedWallet;
+            }
+
+            // Build list view
+            buildListView();
+
+            // Restore view preference
+            restoreViewPreference();
+
+            // Restore grid size
+            restoreGridSize();
+
+            // Load metadata
+            loadMetadata();
+        })();
+
+        // Theme
+                function toggleTheme() {
+            var isDark = document.body.classList.toggle('dark');
+            var icon = document.getElementById('darkModeIcon');
+            if (icon) icon.style.filter = isDark ? 'invert(1)' : 'invert(0)';
+            var params = new URLSearchParams(window.location.search);
+            params.set('mode', isDark ? '1' : '0');
+            window.history.replaceState({}, '', window.location.pathname + '?' + params.toString());
+            updateLinksWithMode();
+        }
+        function initTheme() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var defaultDark = false;
+            var isDark = mode === '1' || (!mode && defaultDark);
+            if (isDark) {
+                document.body.classList.add('dark');
+            }
+            var icon = document.getElementById('darkModeIcon');
+            if (icon) icon.style.filter = isDark ? 'invert(1)' : 'invert(0)';
+            updateLinksWithMode();
+        }
+        function updateLinksWithMode() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return;
+            document.querySelectorAll('a[href]').forEach(function(link) {
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('http')) return;
+                var url = new URL(href, window.location.origin);
+                url.searchParams.set('mode', mode);
+                link.setAttribute('href', url.pathname + url.search);
+            });
+        }
+        initTheme();
+    </script>
+</body>
+</html>

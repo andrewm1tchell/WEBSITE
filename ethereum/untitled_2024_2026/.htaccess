@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Handle CORS preflight requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ index.php [L]
+
+# Route {id}.html requests to index.php
+RewriteRule ^(\d+)\.html$ index.php [L,QSA]

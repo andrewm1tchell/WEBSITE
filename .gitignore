@@ -1,0 +1,17 @@
+# Large image assets (9 GB+)
+images/
+
+# Large image renders
+ethereum/untitled_2024_2026/*.png
+ethereum/untitled_2024_2026/*.jpeg
+ethereum/untitled_2024_2026/*.jpg
+
+# Generated/cached data
+collections/cache/
+
+# PHP dependencies
+vendor/
+
+# macOS
+.DS_Store
+__MACOSX/

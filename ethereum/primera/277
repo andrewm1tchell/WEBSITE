@@ -1,0 +1,38 @@
+{
+  "date": "2021/11/14",
+  "image": "https://andrewmitchell-art.xyz/images/primera/primera-277.gif",
+  "aspect_ratio": "1",
+  "number": "277",
+  "animation_url": "https://andrewmitchell-art.xyz/live/primera/primera.html?hash=0xd941f9f433c04a362de69ee74ab8c0fd1f900b11339cf9883009c64e77cb9f62&number=277",
+  "external_url": "https://andrewmitchell-art.xyz/live/primera/primera.html?hash=0xd941f9f433c04a362de69ee74ab8c0fd1f900b11339cf9883009c64e77cb9f62&number=277",
+  "name": "Primera #277",
+  "description": "Primera is the genesis project from Andrew Mitchell and Grant Yun written completely in p5.js. Primera, capped at 400 individual pieces generated upon mint, has been a project with years in the making. It is a study and interpretation on the fundamentals of early 20th century art utilizing 21st century blockchain technology",
+  "attributes": [
+    {
+      "value": "Tan Background"
+    },
+    {
+      "value": "Blue"
+    },
+    {
+      "value": "Red"
+    },
+    {
+      "value": "Yellow"
+    },
+    {
+      "value": "Orange"
+    },
+    {
+      "value": "Deep Orange"
+    },
+    {
+      "value": "Pink"
+    },
+    {
+      "value": "Green"
+    }
+  ],
+  "script_type": "p5js",
+  "hash": "0xd941f9f433c04a362de69ee74ab8c0fd1f900b11339cf9883009c64e77cb9f62"
+}

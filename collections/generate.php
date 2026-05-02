@@ -1,0 +1,3488 @@
+<?php
+/**
+ * Generate Collection Viewer Pages
+ * Run: php generate.php
+ */
+
+$configPath = __DIR__ . '/config.json';
+$config = json_decode(file_get_contents($configPath), true);
+
+if (!$config) {
+    die("Error: Could not load config.json\n");
+}
+
+// Grid page settings
+$minGridSupply = 5; // Collections with supply < this won't get a grid page
+$skipGrid = ['popup']; // Collections to explicitly exclude from grid
+
+// Function to fetch fxhash token IDs for a given issuer
+function fetchFxhashTokenIds($issuerId, $contract) {
+    // Strategy 1: fxhash GraphQL API — most reliable for fxhash collections
+    // Uses onChainId which is the actual Tezos token ID
+    $fxhashUrl = "https://api.fxhash.xyz/graphql";
+    $query = '{"query":"query { generativeToken(id: ' . intval($issuerId) . ') { entireCollection { onChainId } }}"}';
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/json\r\nAccept: application/json\r\nUser-Agent: fxhash-collection-viewer\r\n",
+            'content' => $query,
+            'timeout' => 30
+        ]
+    ]);
+    $response = @file_get_contents($fxhashUrl, false, $context);
+    if ($response !== false) {
+        $data = json_decode($response, true);
+        if (isset($data['data']['generativeToken']['entireCollection'])) {
+            $tokenIds = [];
+            foreach ($data['data']['generativeToken']['entireCollection'] as $item) {
+                $tid = $item['onChainId'] ?? null;
+                if ($tid !== null && intval($tid) > 0) {
+                    $tokenIds[] = intval($tid);
+                }
+            }
+            sort($tokenIds);
+            if (count($tokenIds) > 0) {
+                return $tokenIds;
+            }
+        }
+    }
+
+    // Strategy 2: TzKT metadata filter (for contracts that store issuer_id in metadata)
+    $filteredUrl = "https://api.tzkt.io/v1/tokens?contract={$contract}&metadata.issuer_id={$issuerId}&select.fields=tokenId&limit=10000";
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 30,
+            'header' => "Accept: application/json\r\nUser-Agent: fxhash-collection-viewer\r\n"
+        ]
+    ]);
+    $response = @file_get_contents($filteredUrl, false, $context);
+    if ($response !== false) {
+        $data = json_decode($response, true);
+        if ($data && is_array($data) && count($data) > 0) {
+            $tokenIds = [];
+            foreach ($data as $token) {
+                if (is_array($token) && isset($token['tokenId'])) {
+                    $tokenIds[] = intval($token['tokenId']);
+                } elseif (is_numeric($token)) {
+                    $tokenIds[] = intval($token);
+                }
+            }
+            if (count($tokenIds) > 0) {
+                sort($tokenIds);
+                return $tokenIds;
+            }
+        }
+    }
+
+    return null;
+}
+
+echo "Generating collection pages...\n\n";
+
+foreach ($config['collections'] as $collection) {
+    $id = $collection['id'];
+    $name = $collection['name'];
+    $chain = $collection['chain'];
+    $contract = $collection['contract'] ?? null;
+    $supply = $collection['supply'];
+    $tokenIdStart = $collection['tokenIdStart'] ?? 0;
+    $tokenIds = $collection['tokenIds'] ?? null;
+    $multiContract = $collection['multiContract'] ?? false;
+    $issuer = $collection['issuer'] ?? null;
+
+    echo "Processing: {$name} ({$supply} tokens)\n";
+
+    // For fxhash collections with issuer, fetch token IDs from API
+    if ($issuer && $chain === 'tezos' && !$tokenIds) {
+        echo "  Fetching fxhash token IDs for issuer {$issuer}...\n";
+        $fetchedIds = fetchFxhashTokenIds($issuer, $contract);
+        if ($fetchedIds && count($fetchedIds) > 0) {
+            $tokenIds = $fetchedIds;
+            $supply = count($tokenIds);
+            echo "  Found {$supply} tokens\n";
+        } else {
+            echo "  Warning: Could not fetch tokens, using range\n";
+        }
+    }
+
+    // Create collection directory
+    $collectionDir = __DIR__ . '/' . $id;
+    if (!is_dir($collectionDir)) {
+        mkdir($collectionDir, 0755, true);
+        echo "  Created directory: {$id}/\n";
+    }
+
+    // Store fetched tokenIds in collection for index generation
+    $collection['tokenIds'] = $tokenIds;
+    $collection['supply'] = $supply;
+
+    // Determine if this collection qualifies for a grid page
+    $hasGrid = ($supply >= $minGridSupply) && !in_array($id, $skipGrid);
+    $collection['hasGrid'] = $hasGrid;
+
+    // Generate collection index page
+    $indexHtml = generateCollectionIndex($collection);
+    file_put_contents($collectionDir . '/index.html', $indexHtml);
+    echo "  Created: {$id}/index.html\n";
+
+    // Generate grid page if qualifying
+    if ($hasGrid) {
+        $gridHtml = generateGridPage($collection);
+        file_put_contents($collectionDir . '/grid.html', $gridHtml);
+        echo "  Created: {$id}/grid.html\n";
+    }
+
+    // Handle multi-contract collections
+    if ($multiContract && isset($collection['contracts'])) {
+        $displayNum = 0;
+        $allTokens = [];
+
+        // Build flat list of all tokens with their contracts
+        foreach ($collection['contracts'] as $contractInfo) {
+            foreach ($contractInfo['tokenIds'] as $tokenId) {
+                $allTokens[] = [
+                    'contract' => $contractInfo['contract'],
+                    'tokenId' => $tokenId
+                ];
+            }
+        }
+
+        $total = count($allTokens);
+        foreach ($allTokens as $index => $tokenInfo) {
+            $displayNum = $index + 1;
+            $prevDisplayNum = $index > 0 ? $index : null;
+            $nextDisplayNum = $index < $total - 1 ? $index + 2 : null;
+
+            // Create a modified collection with the specific contract
+            $tokenCollection = $collection;
+            $tokenCollection['contract'] = $tokenInfo['contract'];
+
+            $tokenHtml = generateTokenPage($tokenCollection, $tokenInfo['tokenId'], $displayNum, $prevDisplayNum, $nextDisplayNum, $total);
+            file_put_contents($collectionDir . '/' . $displayNum . '.html', $tokenHtml);
+        }
+        echo "  Created {$total} token pages\n\n";
+    } else {
+        // Generate individual token pages (normal single-contract collection)
+        $ids = $tokenIds ?? range($tokenIdStart, $tokenIdStart + $supply - 1);
+
+        foreach ($ids as $index => $tokenId) {
+            $displayNum = $index + 1;
+            $prevTokenId = $index > 0 ? $ids[$index - 1] : null;
+            $nextTokenId = $index < count($ids) - 1 ? $ids[$index + 1] : null;
+            $prevDisplayNum = $index > 0 ? $index : null;
+            $nextDisplayNum = $index < count($ids) - 1 ? $index + 2 : null;
+
+            $tokenHtml = generateTokenPage($collection, $tokenId, $displayNum, $prevDisplayNum, $nextDisplayNum, count($ids));
+            file_put_contents($collectionDir . '/' . $displayNum . '.html', $tokenHtml);
+        }
+        echo "  Created {$supply} token pages\n\n";
+    }
+}
+
+echo "Done! All pages generated.\n";
+
+
+// ============ Shared Theme Helpers ============
+
+function getThemeCSSVars() {
+    return <<<CSS
+        :root {
+            --bg: #fafafa;
+            --bg-secondary: #fff;
+            --text: #1a1a1a;
+            --text-secondary: #666;
+            --text-tertiary: #888;
+            --text-muted: #999;
+            --text-faint: #aaa;
+            --border: #eee;
+            --border-hover: #999;
+            --nav-bg: rgba(255,255,255,0.95);
+            --nav-shadow: rgba(0,0,0,0.1);
+            --nav-text: #666;
+            --nav-hover-text: #333;
+            --nav-hover-bg: #fff;
+            --input-bg: #fff;
+            --input-border: #ddd;
+            --input-focus-border: #999;
+            --btn-bg: #fff;
+            --btn-border: #ddd;
+            --btn-text: #666;
+            --btn-hover-border: #999;
+            --btn-hover-text: #333;
+            --btn-active-bg: #333;
+            --btn-active-text: #fff;
+            --btn-active-border: #333;
+            --card-bg: #fff;
+            --card-shadow: rgba(0,0,0,0.1);
+            --highlight-bg: #f5f5f5;
+            --highlight-hover: #f0f0f0;
+            --owned-bg: #e8f5e9;
+            --owned-hover: #c8e6c9;
+            --link-border: #ccc;
+            --grid-item-bg: #f0f0f0;
+            --grid-placeholder: #f5f5f5;
+            --loading-a: #f0f0f0;
+            --loading-b: #e0e0e0;
+            --trait-bg: #fff;
+            --trait-border: #eee;
+        }
+
+        body.dark {
+            --bg: #141414;
+            --bg-secondary: #1e1e1e;
+            --text: #e0e0e0;
+            --text-secondary: #999;
+            --text-tertiary: #777;
+            --text-muted: #666;
+            --text-faint: #555;
+            --border: #333;
+            --border-hover: #666;
+            --nav-bg: rgba(30,30,30,0.95);
+            --nav-shadow: rgba(0,0,0,0.3);
+            --nav-text: #999;
+            --nav-hover-text: #e0e0e0;
+            --nav-hover-bg: #2a2a2a;
+            --input-bg: #1e1e1e;
+            --input-border: #444;
+            --input-focus-border: #666;
+            --btn-bg: #1e1e1e;
+            --btn-border: #444;
+            --btn-text: #999;
+            --btn-hover-border: #666;
+            --btn-hover-text: #e0e0e0;
+            --btn-active-bg: #e0e0e0;
+            --btn-active-text: #141414;
+            --btn-active-border: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --card-shadow: rgba(0,0,0,0.3);
+            --highlight-bg: #252525;
+            --highlight-hover: #2a2a2a;
+            --owned-bg: #1b3a1e;
+            --owned-hover: #254a28;
+            --link-border: #555;
+            --grid-item-bg: #252525;
+            --grid-placeholder: #1e1e1e;
+            --loading-a: #252525;
+            --loading-b: #333;
+            --trait-bg: #1e1e1e;
+            --trait-border: #333;
+        }
+CSS;
+}
+
+function getThemeInitScript($defaultTheme = 'light') {
+    $isDarkDefault = $defaultTheme === 'dark' ? 'true' : 'false';
+    return <<<JS
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var defaultDark = {$isDarkDefault};
+            if (mode === '1' || (!mode && defaultDark)) {
+                document.body.classList.add('dark');
+            }
+        })();
+    </script>
+JS;
+}
+
+function getThemeToggleButton() {
+    return '<button onclick="toggleTheme()" id="themeToggle" title="Toggle dark/light mode" style="background:none !important; box-shadow:none !important; border:none; padding:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><img id="darkModeIcon" height="16" width="16" style="filter:invert(0)" src="https://andrewmitchell-art.xyz/images/dark-icon.png" alt="Light Dark Toggle"/></button>';
+}
+
+function getThemeToggleScript($defaultTheme = 'light') {
+    $isDarkDefault = $defaultTheme === 'dark' ? 'true' : 'false';
+    return <<<JS
+        function toggleTheme() {
+            var isDark = document.body.classList.toggle('dark');
+            var icon = document.getElementById('darkModeIcon');
+            if (icon) icon.style.filter = isDark ? 'invert(1)' : 'invert(0)';
+            var params = new URLSearchParams(window.location.search);
+            params.set('mode', isDark ? '1' : '0');
+            window.history.replaceState({}, '', window.location.pathname + '?' + params.toString());
+            updateLinksWithMode();
+        }
+        function initTheme() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var defaultDark = {$isDarkDefault};
+            var isDark = mode === '1' || (!mode && defaultDark);
+            if (isDark) {
+                document.body.classList.add('dark');
+            }
+            var icon = document.getElementById('darkModeIcon');
+            if (icon) icon.style.filter = isDark ? 'invert(1)' : 'invert(0)';
+            updateLinksWithMode();
+        }
+        function updateLinksWithMode() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return;
+            document.querySelectorAll('a[href]').forEach(function(link) {
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('http')) return;
+                var url = new URL(href, window.location.origin);
+                url.searchParams.set('mode', mode);
+                link.setAttribute('href', url.pathname + url.search);
+            });
+        }
+JS;
+}
+
+// ============ Template Functions ============
+
+function generateCollectionIndex($collection) {
+    $id = $collection['id'];
+    $name = htmlspecialchars($collection['name']);
+    $chain = $collection['chain'];
+    $chainId = $collection['chainId'] ?? 1;
+    $contract = $collection['contract'] ?? '';
+    $supply = $collection['supply'];
+    $tokenIdStart = $collection['tokenIdStart'] ?? 0;
+    $tokenIds = isset($collection['tokenIds']) ? json_encode($collection['tokenIds']) : 'null';
+    $year = $collection['year'] ?? '';
+    $collab = isset($collection['collaboration']) ? ' (w/ ' . htmlspecialchars($collection['collaboration']) . ')' : '';
+    $multiContract = isset($collection['multiContract']) && $collection['multiContract'];
+    $contracts = isset($collection['contracts']) ? json_encode($collection['contracts']) : 'null';
+    $multiContractJs = $multiContract ? 'true' : 'false';
+
+    $explorer = $chain === 'arbitrum' ? 'https://arbiscan.io' : ($chain === 'tezos' ? 'https://tzkt.io' : 'https://etherscan.io');
+
+    // Generate contract info HTML
+    if ($multiContract && isset($collection['contracts'])) {
+        $contractLinks = [];
+        foreach ($collection['contracts'] as $c) {
+            $addr = $c['contract'];
+            $shortAddr = substr($addr, 0, 6) . '...' . substr($addr, -4);
+            $contractLinks[] = "<a href=\"{$explorer}/address/{$addr}\" target=\"_blank\">{$shortAddr}</a>";
+        }
+        $contractInfoHtml = '<p class="contract-info">Contracts: ' . implode(', ', $contractLinks) . '</p>';
+    } else {
+        $contractInfoHtml = "<p class=\"contract-info\">Contract: <a href=\"{$explorer}/address/{$contract}\" target=\"_blank\">{$contract}</a></p>";
+    }
+
+    $hasGrid = isset($collection['hasGrid']) && $collection['hasGrid'];
+    $hasGridJs = $hasGrid ? 'true' : 'false';
+    $thumbBase = "/images/grid-thumbs/{$id}/";
+    $gridAspectRatio = $collection['gridAspectRatio'] ?? '1';
+    $enableTraits = ($id === 'nokori') ? 'true' : 'false';
+
+    // Marketplace name for links
+    if ($chain === 'tezos') {
+        $marketplaceName = 'Objkt';
+    } elseif ($chain === 'arbitrum') {
+        $marketplaceName = 'OpenSea';
+    } else {
+        $marketplaceName = 'OpenSea';
+    }
+
+    $defaultTheme = $collection['defaultTheme'] ?? 'light';
+    $themeCSSVars = getThemeCSSVars();
+    $themeToggleBtn = getThemeToggleButton();
+    $themeToggleScript = getThemeToggleScript($defaultTheme);
+
+    return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$name} - Token List</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <style>
+{$themeCSSVars}
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            padding: 40px 20px;
+            padding-top: 60px;
+            color: var(--text);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .top-nav a {
+            font-size: 0.85em;
+            color: var(--nav-text);
+            text-decoration: none;
+            background: var(--nav-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px var(--nav-shadow);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .top-nav a:hover {
+            color: var(--nav-hover-text);
+            background: var(--nav-hover-bg);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            transition: max-width 0.2s ease;
+        }
+
+        .container.grid-mode {
+            max-width: 1400px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .chain-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .chain-ethereum { background: #627eea20; color: #627eea; }
+        .chain-arbitrum { background: #28a0f020; color: #28a0f0; }
+        .chain-tezos { background: #2c7df720; color: #2c7df7; }
+
+        .token-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .token-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .token-list li.loading-disabled {
+            cursor: wait;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .token-list li:hover:not(.loading-disabled) {
+            background-color: var(--highlight-hover);
+        }
+
+        .token-num {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .owner {
+            color: var(--text-tertiary);
+            font-size: 0.85em;
+            font-family: monospace;
+            position: relative;
+            cursor: default;
+        }
+
+        .owner[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            right: 0;
+            top: -30px;
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            white-space: nowrap;
+            z-index: 100;
+        }
+
+        .loading-row {
+            color: var(--text-faint);
+            font-style: italic;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .back-link a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--link-border);
+            padding-bottom: 2px;
+            margin: 0 15px;
+        }
+
+        .back-link a:hover {
+            border-color: var(--text);
+        }
+
+        .contract-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.8em;
+            color: var(--text-tertiary);
+        }
+
+        .contract-info a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-family: monospace;
+        }
+
+        .contract-info a:hover {
+            color: var(--text);
+        }
+
+        /* My Tokens feature */
+        .my-tokens-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .wallet-input {
+            font-size: 0.85em;
+            padding: 6px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            width: 280px;
+            font-family: monospace;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .wallet-input:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+        }
+
+        .my-tokens-btn {
+            font-size: 0.85em;
+            color: var(--btn-text);
+            text-decoration: none;
+            background: var(--btn-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px var(--nav-shadow);
+            border: 1px solid var(--btn-border);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .my-tokens-btn:hover {
+            color: var(--btn-hover-text);
+            border-color: var(--btn-hover-border);
+        }
+
+        .my-tokens-btn.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .wallet-address {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        .my-tokens-count {
+            font-size: 0.8em;
+            color: var(--text-tertiary);
+            margin-left: 5px;
+        }
+
+        .token-list li.owned {
+            background-color: var(--owned-bg);
+        }
+
+        .token-list li.owned:hover {
+            background-color: var(--owned-hover);
+        }
+
+        .owned-badge {
+            background: #4caf50;
+            color: #fff;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+
+        .filter-info {
+            text-align: center;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        /* View Toggle */
+        .view-toggle-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .view-toggle-btn {
+            font-size: 0.85em;
+            color: var(--btn-text);
+            background: var(--btn-bg);
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid var(--btn-border);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .view-toggle-btn:hover {
+            color: var(--btn-hover-text);
+            border-color: var(--btn-hover-border);
+        }
+
+        .view-toggle-btn.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        /* Grid Controls */
+        .grid-controls {
+            display: none;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .grid-controls.active {
+            display: flex;
+        }
+
+        .size-toggle {
+            display: flex;
+            gap: 4px;
+        }
+
+        .size-toggle button {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .size-toggle button:hover {
+            border-color: var(--btn-hover-border);
+        }
+
+        .size-toggle button.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .trait-filter-btn {
+            font-size: 0.8em;
+            padding: 5px 10px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .trait-filter-btn:hover {
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-bottom: 40px;
+        }
+
+        .grid.size-small {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 4px;
+        }
+
+        .grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .grid-item {
+            position: relative;
+            aspect-ratio: {$gridAspectRatio};
+            overflow: hidden;
+            background: var(--grid-item-bg);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .grid-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .grid-item .number {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: #fff;
+            font-size: 0.75em;
+            padding: 15px 6px 4px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .grid-item:hover .number {
+            opacity: 1;
+        }
+
+        .grid-item.no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            background: var(--grid-placeholder);
+        }
+
+        .grid-item.no-image .number {
+            opacity: 1;
+            background: none;
+            position: static;
+            color: var(--text-muted);
+            padding: 0;
+        }
+
+        .grid-item.hidden {
+            display: none;
+        }
+
+        .grid-item.loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background-color: var(--loading-a); }
+            50% { background-color: var(--loading-b); }
+        }
+
+        /* Trait filter panel */
+        .trait-filters {
+            display: none;
+            background: var(--trait-bg);
+            border: 1px solid var(--trait-border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .trait-filters.open {
+            display: block;
+        }
+
+        .trait-group {
+            margin-bottom: 12px;
+        }
+
+        .trait-group-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .trait-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .trait-option {
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border: 1px solid var(--btn-border);
+            border-radius: 3px;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .trait-option:hover {
+            border-color: #999;
+        }
+
+        .trait-option.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .trait-count {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .back-link a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--link-border);
+            padding-bottom: 2px;
+            margin: 0 15px;
+        }
+
+        .back-link a:hover {
+            border-color: var(--text);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 40px 10px;
+                padding-top: 55px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 4px;
+            }
+
+            .grid.size-small {
+                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            }
+
+            .grid.size-large {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .controls {
+                gap: 6px;
+            }
+
+            .search-input {
+                width: 180px;
+            }
+
+            .top-nav {
+                flex-wrap: wrap;
+            }
+
+            .top-nav a {
+                font-size: 0.75em;
+                padding: 5px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var def = '{$defaultTheme}';
+            if (mode === '1' || (!mode && def === 'dark')) document.body.classList.add('dark');
+        })();
+    </script>
+    <div class="top-nav">
+        <div class="top-nav-links">
+            <a href="/collections/">All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">Back to Site</a>
+        </div>
+        {$themeToggleBtn}
+    </div>
+
+    <div class="container">
+        <h1>{$name}<span class="chain-badge chain-{$chain}">{$chain}</span></h1>
+        <p class="subtitle">{$supply} tokens{$collab}</p>
+
+        <div class="view-toggle-bar" id="viewToggleBar">
+            <button class="view-toggle-btn active" id="listViewBtn" onclick="showListView()">List</button>
+            <button class="view-toggle-btn" id="gridViewBtn" onclick="showGridView()">Grid</button>
+        </div>
+
+        <div class="my-tokens-bar">
+            <input type="text" id="walletInput" class="wallet-input" placeholder="Enter wallet address..." />
+            <button class="my-tokens-btn" id="myTokensBtn" onclick="toggleMyTokens()">My Tokens</button>
+        </div>
+
+        <div class="controls" id="gridControls" style="display:none;">
+            <button class="filter-btn" id="traitFilterBtn" onclick="toggleTraitFilters()" style="display:none;">Traits ▼</button>
+            <button class="filter-btn" id="clearTraitsBtn" onclick="clearTraitFilters()" style="display:none;">Clear Traits</button>
+            <div class="size-toggle" style='margin-left: 5px;'>
+                <button onclick="setGridSize('small')" id="sizeSmall">S</button>
+                <button onclick="setGridSize('medium')" id="sizeMedium">M</button>
+                <button onclick="setGridSize('large')" id="sizeLarge" class="active">L</button>
+            </div>
+        </div>
+
+        <div class="trait-filters" id="traitFilters"></div>
+        <div class="filter-info" id="filterInfo"></div>
+
+        <ul class="token-list" id="tokenList"></ul>
+        <div class="grid" id="grid" style="display:none;"></div>
+
+        <div class="back-link">
+            <a href="/collections/">← All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">← Back to Site</a>
+        </div>
+    </div>
+
+    <script>
+        const COLLECTION = {
+            id: '{$id}',
+            name: '{$name}',
+            chain: '{$chain}',
+            supply: {$supply},
+            thumbBase: '{$thumbBase}',
+            tokenIds: {$tokenIds},
+            tokenIdStart: {$tokenIdStart},
+            enableTraits: {$enableTraits}
+        };
+
+        const HAS_GRID = {$hasGridJs};
+        const MARKETPLACE_NAME = '{$marketplaceName}';
+        const WALLET_CACHE_KEY = 'connectedWallet';
+
+        let allTokens = [];
+        let traitIndex = {};
+        let activeTraitFilters = {};
+        let metadataLoaded = false;
+        let currentView = 'list';
+        let gridBuilt = false;
+        let myTokensOnly = false;
+        let ownedTokens = [];
+
+        // Build list view
+        function buildListView() {
+            const tokenList = document.getElementById('tokenList');
+            let html = '';
+            for (let i = 1; i <= COLLECTION.supply; i++) {
+                html += '<li id="token-' + i + '" onclick="goToToken(' + i + ')">' +
+                    '<span class="token-num">#' + i + '</span>' +
+                    '<span class="owner">—</span>' +
+                    '</li>';
+            }
+            tokenList.innerHTML = html;
+            // Load owners after building list
+            loadOwners();
+        }
+
+        // Load and display all token owners
+        function loadOwners() {
+            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.owners) {
+                        Object.entries(data.owners).forEach(([displayNum, owner]) => {
+                            const li = document.getElementById('token-' + displayNum);
+                            if (li) {
+                                const ownerSpan = li.querySelector('.owner');
+                                if (ownerSpan && owner) {
+                                    const shortAddr = owner.slice(0, 6) + '...' + owner.slice(-4);
+                                    ownerSpan.textContent = shortAddr;
+                                    ownerSpan.title = owner;
+                                }
+                            }
+                        });
+                    }
+                })
+                .catch(e => {
+                    console.log('Could not load owners:', e.message);
+                });
+        }
+
+        // Build grid view (lazy - only when first switching to grid)
+        function buildGridView() {
+            if (gridBuilt) return;
+            const grid = document.getElementById('grid');
+            let html = '';
+            for (let i = 1; i <= COLLECTION.supply; i++) {
+                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
+                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + i + '</div>' +
+                    '</div>';
+            }
+            grid.innerHTML = html;
+            gridBuilt = true;
+        }
+
+        // View toggle functions
+        function showListView() {
+            currentView = 'list';
+            document.getElementById('tokenList').style.display = '';
+            document.getElementById('grid').style.display = 'none';
+            document.getElementById('gridControls').style.display = 'none';
+            document.querySelector('.my-tokens-bar').style.display = '';
+            document.getElementById('listViewBtn').classList.add('active');
+            document.getElementById('gridViewBtn').classList.remove('active');
+            document.querySelector('.container').classList.remove('grid-mode');
+            localStorage.setItem('collectionView_' + COLLECTION.id, 'list');
+        }
+
+        function showGridView() {
+            if (!HAS_GRID) return;
+            currentView = 'grid';
+            buildGridView();
+            document.getElementById('tokenList').style.display = 'none';
+            document.getElementById('grid').style.display = '';
+            document.getElementById('gridControls').style.display = 'flex';
+            document.querySelector('.my-tokens-bar').style.display = 'none';
+            document.getElementById('listViewBtn').classList.remove('active');
+            document.getElementById('gridViewBtn').classList.add('active');
+            document.querySelector('.container').classList.add('grid-mode');
+            localStorage.setItem('collectionView_' + COLLECTION.id, 'grid');
+        }
+
+        function restoreViewPreference() {
+            if (!HAS_GRID) {
+                document.getElementById('gridViewBtn').style.display = 'none';
+                return;
+            }
+            const saved = localStorage.getItem('collectionView_' + COLLECTION.id);
+            if (saved === 'grid') {
+                showGridView();
+            }
+        }
+
+        // My Tokens functionality
+        function toggleMyTokens() {
+            const btn = document.getElementById('myTokensBtn');
+            const input = document.getElementById('walletInput');
+            let walletAddr = input.value.trim();
+
+            if (!walletAddr) {
+                walletAddr = localStorage.getItem(WALLET_CACHE_KEY);
+                if (walletAddr) {
+                    input.value = walletAddr;
+                }
+            }
+
+            if (!walletAddr) {
+                alert('Please enter your wallet address');
+                input.focus();
+                return;
+            }
+
+            localStorage.setItem(WALLET_CACHE_KEY, walletAddr);
+
+            myTokensOnly = !myTokensOnly;
+            btn.classList.toggle('active', myTokensOnly);
+
+            if (ownedTokens.length === 0 && myTokensOnly) {
+                loadOwnedTokens(walletAddr);
+            } else {
+                filterTokenList();
+            }
+        }
+
+        function loadOwnedTokens(walletAddr) {
+            const btn = document.getElementById('myTokensBtn');
+            btn.textContent = 'Loading...';
+
+            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.owners) {
+                        ownedTokens = [];
+                        Object.entries(data.owners).forEach(([displayNum, owner]) => {
+                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                                ownedTokens.push(parseInt(displayNum));
+                            }
+                        });
+
+                        if (ownedTokens.length > 0) {
+                            btn.textContent = 'My Tokens (' + ownedTokens.length + ')';
+                        } else {
+                            btn.textContent = 'No tokens found';
+                            setTimeout(() => { btn.textContent = 'My Tokens'; }, 2000);
+                        }
+
+                        filterTokenList();
+                    }
+                })
+                .catch(e => {
+                    console.error('Error loading owners:', e);
+                    btn.textContent = 'Error';
+                    setTimeout(() => { btn.textContent = 'My Tokens'; }, 2000);
+                });
+        }
+
+        function filterTokenList() {
+            const items = document.querySelectorAll('#tokenList li');
+            items.forEach((item, index) => {
+                const displayNum = index + 1;
+                const isOwned = ownedTokens.includes(displayNum);
+
+                if (myTokensOnly && !isOwned) {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = '';
+                }
+
+                if (isOwned) {
+                    item.classList.add('owned');
+                } else {
+                    item.classList.remove('owned');
+                }
+            });
+        }
+
+        function getModeUrl(url) {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return url;
+            var newUrl = new URL(url, window.location.origin);
+            newUrl.searchParams.set('mode', mode);
+            return newUrl.pathname + newUrl.search;
+        }
+
+        function goToToken(displayNum) {
+            window.location.href = getModeUrl('/collections/' + COLLECTION.id + '/' + displayNum + '.html');
+        }
+
+        function applyGridFilters() {
+            const items = document.querySelectorAll('.grid-item');
+            let visibleCount = 0;
+
+            let traitPassSet = null;
+            const activeTypes = Object.keys(activeTraitFilters);
+            if (activeTypes.length > 0) {
+                let sets = activeTypes.map(type => {
+                    const values = activeTraitFilters[type];
+                    const combined = new Set();
+                    values.forEach(v => {
+                        (traitIndex[type][v] || []).forEach(num => combined.add(num));
+                    });
+                    return combined;
+                });
+                traitPassSet = sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+            }
+
+            items.forEach(item => {
+                const num = parseInt(item.dataset.displayNum);
+                let show = true;
+
+                if (traitPassSet && !traitPassSet.has(num)) {
+                    show = false;
+                }
+
+                if (show) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            const filterInfo = document.getElementById('filterInfo');
+            if (Object.keys(activeTraitFilters).length > 0) {
+                filterInfo.textContent = 'Showing ' + visibleCount + ' of ' + COLLECTION.supply + ' tokens';
+                filterInfo.style.display = 'block';
+            } else {
+                filterInfo.style.display = 'none';
+            }
+        }
+
+        // Load metadata from API
+        async function loadMetadata() {
+            try {
+                const response = await fetch('/collections/metadata-api.php?collection=' + COLLECTION.id);
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data.tokens && data.tokens.length > 0) {
+                    allTokens = data.tokens;
+                    metadataLoaded = true;
+                    if (COLLECTION.enableTraits) {
+                        buildTraitIndex();
+                        var traitBtn = document.getElementById('traitFilterBtn');
+                        if (traitBtn && Object.keys(traitIndex).length > 0) {
+                            traitBtn.style.display = '';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('Metadata not available:', e.message);
+            }
+        }
+
+        function buildTraitIndex() {
+            traitIndex = {};
+            allTokens.forEach(token => {
+                const attrs = token.attributes || [];
+                attrs.forEach(attr => {
+                    const type = attr.trait_type;
+                    const value = String(attr.value);
+                    if (!type) return;
+                    if (!traitIndex[type]) traitIndex[type] = {};
+                    if (!traitIndex[type][value]) traitIndex[type][value] = [];
+                    traitIndex[type][value].push(token.displayNum);
+                });
+            });
+
+            const container = document.getElementById('traitFilters');
+            if (!container) return;
+            let html = '';
+            const sortedTypes = Object.keys(traitIndex).sort();
+            sortedTypes.forEach(type => {
+                const values = Object.keys(traitIndex[type]).sort();
+                html += '<div class="trait-group">';
+                html += '<div class="trait-group-title">' + escapeHtml(type) + '</div>';
+                html += '<div class="trait-options">';
+                values.forEach(value => {
+                    const count = traitIndex[type][value].length;
+                    html += '<span class="trait-option" data-type="' + escapeAttr(type) + '" data-value="' + escapeAttr(value) + '" onclick="toggleTraitFilter(this)">' +
+                        escapeHtml(value) + '<span class="trait-count">(' + count + ')</span></span>';
+                });
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(text) {
+            return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function toggleTraitFilters() {
+            const panel = document.getElementById('traitFilters');
+            const btn = document.getElementById('traitFilterBtn');
+            if (!panel || !btn) return;
+            panel.classList.toggle('open');
+            btn.textContent = panel.classList.contains('open') ? 'Traits ▲' : 'Traits ▼';
+        }
+
+        function toggleTraitFilter(el) {
+            const type = el.dataset.type;
+            const value = el.dataset.value;
+            el.classList.toggle('active');
+
+            if (!activeTraitFilters[type]) activeTraitFilters[type] = [];
+
+            if (el.classList.contains('active')) {
+                activeTraitFilters[type].push(value);
+            } else {
+                activeTraitFilters[type] = activeTraitFilters[type].filter(v => v !== value);
+                if (activeTraitFilters[type].length === 0) delete activeTraitFilters[type];
+            }
+
+            updateClearButton();
+            applyGridFilters();
+        }
+
+        function clearTraitFilters() {
+            activeTraitFilters = {};
+            document.querySelectorAll('.trait-option.active').forEach(el => el.classList.remove('active'));
+            updateClearButton();
+            applyGridFilters();
+        }
+
+        function updateClearButton() {
+            const btn = document.getElementById('clearTraitsBtn');
+            if (!btn) return;
+            const hasFilters = Object.keys(activeTraitFilters).length > 0;
+            btn.style.display = hasFilters ? '' : 'none';
+        }
+
+        function setGridSize(size) {
+            const grid = document.getElementById('grid');
+            if (!grid) return;
+            grid.classList.remove('size-small', 'size-medium', 'size-large');
+            grid.classList.add('size-' + size);
+
+            document.querySelectorAll('.size-toggle button').forEach(b => b.classList.remove('active'));
+            const sizeBtn = document.getElementById('size' + size.charAt(0).toUpperCase() + size.slice(1));
+            if (sizeBtn) sizeBtn.classList.add('active');
+
+            localStorage.setItem('gridSize_' + COLLECTION.id, size);
+        }
+
+        function restoreGridSize() {
+            const saved = localStorage.getItem('gridSize_' + COLLECTION.id);
+            if (saved) {
+                setGridSize(saved);
+            } else {
+                setGridSize('large');
+            }
+        }
+
+        // Initialize
+        (function init() {
+            // Restore wallet address
+            const savedWallet = localStorage.getItem(WALLET_CACHE_KEY);
+            if (savedWallet) {
+                document.getElementById('walletInput').value = savedWallet;
+            }
+
+            // Build list view
+            buildListView();
+
+            // Restore view preference
+            restoreViewPreference();
+
+            // Restore grid size
+            restoreGridSize();
+
+            // Load metadata
+            loadMetadata();
+        })();
+
+        // Theme
+        {$themeToggleScript}
+        initTheme();
+    </script>
+</body>
+</html>
+HTML;
+}
+
+function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNum, $total) {
+    $id = $collection['id'];
+    $name = htmlspecialchars($collection['name']);
+    $chain = $collection['chain'];
+    $chainId = $collection['chainId'] ?? 1;
+    $contract = $collection['contract'];
+    $animationField = $collection['animationField'] ?? 'animation_url';
+    $defaultView = $collection['defaultView'] ?? 'animation';
+    $year = $collection['year'] ?? '';
+
+    // Feature flags
+    $features = $collection['features'] ?? [];
+    $hasVisibilitySettings = isset($features['visibilitySettings']) && $features['visibilitySettings'];
+    $hasStaticImage = isset($features['staticImage']) && $features['staticImage'];
+    $hasCopyAsImage = isset($features['copyAsImage']) && $features['copyAsImage'];
+    $staticImagePath = $collection['staticImagePath'] ?? '';
+    // Replace {tokenId} placeholder with actual token ID
+    $staticImagePath = str_replace('{tokenId}', $tokenId, $staticImagePath);
+
+    // JSON encode feature flags for JavaScript
+    $featuresJson = json_encode([
+        'visibilitySettings' => $hasVisibilitySettings,
+        'staticImage' => $hasStaticImage,
+        'copyAsImage' => $hasCopyAsImage,
+        'staticImagePath' => $staticImagePath
+    ]);
+
+    $prevLink = $prevNum ? "<a href=\"/collections/{$id}/{$prevNum}.html\" class=\"nav-btn\">← Prev</a>" : "<span class=\"nav-btn disabled\">← Prev</span>";
+    $nextLink = $nextNum ? "<a href=\"/collections/{$id}/{$nextNum}.html\" class=\"nav-btn\">Next →</a>" : "<span class=\"nav-btn disabled\">Next →</span>";
+
+
+    $defaultTheme = $collection['defaultTheme'] ?? 'light';
+    $themeCSSVars = getThemeCSSVars();
+    $themeToggleBtn = getThemeToggleButton();
+    $themeToggleScript = getThemeToggleScript($defaultTheme);
+
+    return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$name} #{$displayNum}</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <style>
+{$themeCSSVars}
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .top-nav a {
+            font-size: 0.85em;
+            color: var(--nav-text);
+            text-decoration: none;
+            background: var(--nav-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px var(--nav-shadow);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .top-nav a:hover {
+            color: var(--nav-hover-text);
+            background: var(--nav-hover-bg);
+        }
+
+        .scroll-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text);
+            font-size: 13px;
+            background: var(--nav-bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px var(--nav-shadow);
+            animation: fadeOut 1.5s forwards;
+            pointer-events: none;
+        }
+
+        .scroll-indicator .arrow {
+            font-size: 18px;
+            animation: bounce 0.8s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+
+        @keyframes fadeOut {
+            0%, 40% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        body.gallery-mode .scroll-indicator {
+            display: none;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 40px auto 100px;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .artwork-container {
+            width: min(92vh, calc(100vw - 40px));
+            height: min(98vh, calc(100vw - 40px));
+            margin: 0 auto 15px;
+        }
+
+        .artwork-container.image-only {
+            height: auto;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .artwork-container img {
+            max-width: 100%;
+            max-height: 92vh;
+            height: auto;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            object-fit: contain;
+        }
+
+        .artwork-container.image-only img {
+            max-height: 600px;
+            width: 100%;
+        }
+
+        .artwork-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .artwork-container video {
+            max-width: 100%;
+            max-height: 92vh;
+            height: auto;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .artwork-container.image-only video {
+            max-height: 600px;
+            width: 100%;
+        }
+
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .view-toggle button {
+            padding: 6px 14px;
+            font-size: 0.8em;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .view-toggle button:hover {
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }
+
+        .view-toggle button.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .view-toggle.hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .view-toggle {
+                margin-top: 10px;
+            }
+        }
+
+        .loading {
+            padding: 100px;
+            color: var(--text-secondary);
+        }
+
+        .error {
+            padding: 40px;
+            color: #c62828;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .metadata {
+            text-align: left;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--card-shadow);
+            max-width: 500px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 0 auto 20px;
+        }
+
+        .metadata h2 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .metadata .description {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: pre-wrap;
+            overflow: hidden;
+        }
+
+        .metadata .description a {
+            color: #1976d2;
+            word-break: break-all;
+        }
+
+        .metadata .owner-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .metadata .owner-label {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metadata .owner-address {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: var(--text);
+        }
+
+        .attributes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .attribute {
+            background: var(--highlight-bg);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .attribute-type {
+            color: var(--text-muted);
+            font-size: 0.75em;
+            text-transform: uppercase;
+        }
+
+        .attribute-value {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85em;
+            padding-bottom: 2px;
+            border-bottom: 1px solid var(--link-border);
+        }
+
+        .links a:hover {
+            color: var(--text);
+            border-color: var(--text);
+        }
+
+        /* Bottom right navigation */
+        .token-nav {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--nav-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 12px var(--nav-shadow);
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 220px;
+        }
+
+        .token-nav-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .token-nav .nav-btn {
+            font-size: 0.85em;
+            color: var(--text);
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid var(--btn-border);
+            border-radius: 4px;
+            background: var(--btn-bg);
+            cursor: pointer;
+        }
+
+        .token-nav .nav-btn:hover:not(.disabled) {
+            background: var(--highlight-bg);
+            border-color: var(--btn-hover-border);
+        }
+
+        .token-nav .nav-btn.disabled {
+            color: var(--text-faint);
+            cursor: default;
+            border-color: var(--border);
+        }
+
+        .token-nav .nav-info {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .token-nav .nav-info:hover {
+            color: var(--text);
+        }
+
+        .token-list-dropdown {
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+
+        .token-list-dropdown.open {
+            display: block;
+        }
+
+        .token-list-dropdown a {
+            display: block;
+            padding: 6px 8px;
+            font-size: 0.8em;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .token-list-dropdown a:hover {
+            background: var(--highlight-hover);
+        }
+
+        .token-list-dropdown a.current {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+        }
+
+        .token-list-dropdown a.owned {
+            background: #e8f5e9;
+        }
+
+        .token-list-dropdown a.owned.current {
+            background: #4caf50;
+            color: #fff;
+        }
+
+        .my-tokens-toggle {
+            font-size: 0.75em;
+            color: var(--btn-text);
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .my-tokens-toggle:hover {
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }
+
+        .my-tokens-toggle.active {
+            background: #4caf50;
+            color: #fff;
+            border-color: #4caf50;
+        }
+
+        .token-nav .wallet-input {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            width: 100%;
+            font-family: monospace;
+            box-sizing: border-box;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .token-nav .wallet-input:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin-top: 50px;
+                margin-bottom: 160px;
+            }
+
+            .token-nav {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+
+            .token-nav-row {
+                justify-content: space-between;
+            }
+
+            .artwork-container {
+                width: min(90vh, calc(100vw - 20px));
+                height: min(90vh, calc(100vw - 20px));
+            }
+
+            .artwork-container img {
+                max-height: 90vh;
+            }
+
+            .artwork-container iframe {
+                height: 100%;
+            }
+
+            .view-toggle {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .view-toggle button {
+                padding: 5px 10px;
+                font-size: 0.75em;
+            }
+        }
+
+        /* Move gallery button below top nav on smaller screens to prevent overlap */
+        @media (max-width: 900px) {
+            .top-nav {
+                flex-wrap: wrap;
+                max-width: calc(100% - 120px);
+            }
+
+            .top-nav a {
+                font-size: 0.8em;
+                padding: 5px 10px;
+            }
+
+            .gallery-toggle {
+                top: 10px;
+                right: 10px;
+            }
+
+            .gallery-toggle button {
+                font-size: 0.8em;
+                padding: 5px 10px;
+            }
+        }
+
+        /* Small mobile - hide gallery mode, fix iframe height */
+        @media (max-width: 500px) {
+            .top-nav {
+                max-width: 100%;
+                right: 10px;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+
+            .top-nav a {
+                font-size: 0.75em;
+                padding: 5px 8px;
+                line-height: 1.2;
+            }
+
+            .top-nav a {
+                font-size: 0.75em;
+                padding: 5px 8px;
+            }
+
+            .gallery-toggle {
+                display: none;
+            }
+
+            .artwork-container {
+                height: auto;
+                aspect-ratio: 1 / 1;
+                max-height: 80vh;
+            }
+
+            .artwork-container iframe {
+                height: 100%;
+                aspect-ratio: 1 / 1;
+                max-height: 80vh;
+            }
+        }
+
+        /* Visibility Info - Nokori specific */
+        .visibility-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--highlight-bg);
+            border-radius: 6px;
+            font-size: 0.8em;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .visibility-info-header {
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .visibility-info-header a {
+            font-weight: 400;
+            color: #1976d2;
+            text-decoration: none;
+        }
+
+        .visibility-settings {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .visibility-settings label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            font-size: 0.95em;
+        }
+
+        /* Copy button */
+        .copy-btn {
+            padding: 6px 14px;
+            font-size: 0.8em;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }
+
+        .copy-btn.copied {
+            background: #4caf50;
+            color: #fff;
+            border-color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var def = '{$defaultTheme}';
+            if (mode === '1' || (!mode && def === 'dark')) document.body.classList.add('dark');
+        })();
+    </script>
+    <div class="scroll-indicator" id="scrollIndicator">
+        <span class="arrow"></span>
+        <span>Scroll down for metadata ▼</span>
+    </div>
+
+    <div class="top-nav">
+        <div class="top-nav-links">
+            <a href="/collections/{$id}/">← {$name}</a>
+            <a href="/collections/">All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">Back to Site</a>
+        </div>
+        {$themeToggleBtn}
+    </div>
+
+    <div class="container">
+        <div class="artwork-container" id="artworkContainer">
+            <div class="loading">Loading artwork...</div>
+        </div>
+
+
+        <div class="view-toggle hidden" id="viewToggle">
+            <button id="btnImage" onclick="showImage()">Image</button>
+            <button id="btnAnimation" onclick="showAnimation()">Animation</button>
+            <button id="btnStaticImage" onclick="showStaticImage()" style="display:none;">Animation as JPG</button>
+            <button id="btnCopy" onclick="copyAsImage()" class="copy-btn" style="display:none;">Copy as Image</button>
+        </div>
+
+        <div id="visibilityInfo" class="visibility-info" style="display: none;">
+            <div class="visibility-info-header">Visibility Settings: <a href="https://etherscan.io/address/0xA8C1fc111d554C291c495a2bE71Ba58edEa208D0#writeContract" target="_blank">(configure onchain)</a></div>
+            <div class="visibility-settings" id="visibilitySettings">
+                <label><input type="checkbox" id="visCached" disabled> Cached Image Always</label>
+                <label><input type="checkbox" id="visMobile" disabled> Cached Image on Mobile</label>
+                <label><input type="checkbox" id="visSafari" disabled> Cached Image on Safari/Firefox</label>
+                <label><input type="checkbox" id="visWarning" disabled> Show Warning Popup</label>
+            </div>
+        </div>
+
+        <div class="metadata" id="metadata" style="display:none;">
+            <h2 id="tokenName"></h2>
+            <div class="description" id="tokenDescription"></div>
+            <div class="attributes" id="attributes"></div>
+            <div class="owner-info">
+                <div class="owner-label">Owner</div>
+                <div class="owner-address" id="ownerAddress">Loading...</div>
+            </div>
+        </div>
+
+        <div class="links" id="links"></div>
+    </div>
+
+    <div class="token-nav" id="tokenNav">
+        <div class="token-nav-row">
+            {$prevLink}
+            <span class="nav-info" onclick="toggleTokenList()" title="Click to browse all tokens">{$displayNum} / {$total} ▼</span>
+            {$nextLink}
+        </div>
+        <input type="text" id="walletInput" class="wallet-input" placeholder="Paste wallet address..." />
+        <div class="token-nav-row" style="justify-content: center;">
+            <button class="my-tokens-toggle" id="myTokensToggle" onclick="toggleMyTokensNav()">My Tokens</button>
+        </div>
+        <div class="token-list-dropdown" id="tokenListDropdown">
+            <!-- Populated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const TOKEN = {
+            collectionId: '{$id}',
+            collectionName: '{$name}',
+            chain: '{$chain}',
+            chainId: {$chainId},
+            contract: '{$contract}',
+            tokenId: {$tokenId},
+            displayNum: {$displayNum},
+            animationField: '{$animationField}',
+            defaultView: '{$defaultView}',
+            features: {$featuresJson},
+            year: '{$year}'
+        };
+
+        const RPC_URLS = {
+            ethereum: 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd',
+            arbitrum: 'https://arb1.arbitrum.io/rpc'
+        };
+
+        const ERC721_ABI = [
+            'function tokenURI(uint256 tokenId) view returns (string)',
+            'function ownerOf(uint256 tokenId) view returns (address)'
+        ];
+
+        function shortenAddress(addr) {
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+
+        function getImageUrl(url) {
+            if (!url) return null;
+            if (url.startsWith('ipfs://')) {
+                return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
+            }
+            if (url.startsWith('ar://')) {
+                return url.replace('ar://', 'https://arweave.net/');
+            }
+            return url;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function sanitizeHtml(text) {
+            if (!text) return '';
+            // Escape HTML tags but preserve line breaks
+            const newlineRegex = new RegExp('\\\\n', 'g');
+            const actualNewline = new RegExp('\\n', 'g');
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;')
+                .replace(newlineRegex, '<br>')
+                .replace(actualNewline, '<br>');
+        }
+
+        async function fetchMetadata(uri, retryCount = 0) {
+            if (uri.startsWith('data:application/json;base64,')) {
+                const base64 = uri.replace('data:application/json;base64,', '');
+                return JSON.parse(atob(base64));
+            }
+            if (uri.startsWith('data:application/json,')) {
+                return JSON.parse(decodeURIComponent(uri.replace('data:application/json,', '')));
+            }
+
+            let fetchUri = uri;
+            if (uri.startsWith('ipfs://')) {
+                fetchUri = uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+            }
+            if (uri.startsWith('ar://')) {
+                fetchUri = uri.replace('ar://', 'https://arweave.net/');
+            }
+
+            // Use our own PHP proxy for artblocks.io URLs (they block CORS)
+            const needsProxy = fetchUri.includes('artblocks.io');
+            if (needsProxy) {
+                fetchUri = '/collections/proxy.php?url=' + encodeURIComponent(fetchUri);
+            }
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+                const response = await fetch(fetchUri, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) throw new Error('Fetch failed: ' + response.status);
+                return await response.json();
+            } catch (e) {
+                console.log('Fetch failed:', e.message);
+
+                // Retry once if failed
+                if (retryCount < 1) {
+                    console.log('Retrying...');
+                    await new Promise(r => setTimeout(r, 1000));
+                    return fetchMetadata(uri, retryCount + 1);
+                }
+
+                throw new Error('Fetch failed for: ' + uri);
+            }
+        }
+
+        function isVideoUrl(url) {
+            if (!url) return false;
+            const lowerUrl = url.toLowerCase();
+            // Check for video file extensions
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v'];
+            if (videoExtensions.some(ext => lowerUrl.includes(ext))) return true;
+            // Check for video mime type hints in URL
+            if (lowerUrl.includes('video/') || lowerUrl.includes('type=video')) return true;
+            return false;
+        }
+
+        function createIframe(url) {
+            // Create iframe with all necessary permissions for generative art
+            const permissions = [
+                'accelerometer',
+                'gyroscope',
+                'magnetometer',
+                'camera',
+                'microphone',
+                'xr-spatial-tracking',
+                'fullscreen',
+                'autoplay'
+            ].join('; ');
+            return '<iframe src="' + url + '" allowfullscreen allow="' + permissions + '" style="background:transparent;"></iframe>';
+        }
+
+        function renderMedia(url, altText, container) {
+            if (isVideoUrl(url)) {
+                return '<video src="' + url + '" controls autoplay loop muted playsinline>' + altText + '</video>';
+            } else if (url.match(/\\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+                return '<img src="' + url + '" alt="' + altText + '">';
+            } else {
+                // Likely an HTML/interactive piece
+                return '<iframe src="' + url + '" allowfullscreen style="background:transparent;"></iframe>';
+            }
+        }
+
+        function getExplorerUrl() {
+            if (TOKEN.chain === 'tezos') {
+                return 'https://tzkt.io/' + TOKEN.contract + '/tokens/' + TOKEN.tokenId;
+            }
+            const explorers = {
+                ethereum: 'https://etherscan.io',
+                arbitrum: 'https://arbiscan.io'
+            };
+            const base = explorers[TOKEN.chain] || 'https://etherscan.io';
+            return base + '/nft/' + TOKEN.contract + '/' + TOKEN.tokenId;
+        }
+
+        function getMarketplaceUrl() {
+            if (TOKEN.chain === 'tezos') {
+                return 'https://objkt.com/tokens/' + TOKEN.contract + '/' + TOKEN.tokenId;
+            }
+            const chains = { ethereum: 'ethereum', arbitrum: 'arbitrum' };
+            const osChain = chains[TOKEN.chain];
+            if (!osChain) return null;
+            return 'https://opensea.io/assets/' + osChain + '/' + TOKEN.contract + '/' + TOKEN.tokenId;
+        }
+
+        async function loadToken() {
+            const artworkContainer = document.getElementById('artworkContainer');
+            const metadataDiv = document.getElementById('metadata');
+            const linksDiv = document.getElementById('links');
+
+            if (TOKEN.chain === 'tezos') {
+                // Use TzKT API for Tezos
+                try {
+                    const tokenResponse = await fetch('https://api.tzkt.io/v1/tokens?contract=' + TOKEN.contract + '&tokenId=' + TOKEN.tokenId);
+                    const tokens = await tokenResponse.json();
+
+                    if (!tokens || tokens.length === 0) {
+                        artworkContainer.innerHTML = '<div class="error">Token not found</div>';
+                        return;
+                    }
+
+                    const tokenData = tokens[0];
+                    const metadata = tokenData.metadata || {};
+
+                    const holdersResponse = await fetch('https://api.tzkt.io/v1/tokens/balances?token.contract=' + TOKEN.contract + '&token.tokenId=' + TOKEN.tokenId + '&balance.gt=0');
+                    const holders = await holdersResponse.json();
+                    const owner = (holders && holders.length > 0) ? holders[0].account.address : 'Unknown';
+
+                    const imageUrl = getImageUrl(metadata.displayUri || metadata.artifactUri || metadata.thumbnailUri);
+                    const animationUrl = getImageUrl(metadata.artifactUri);
+                    window.tokenImageUrl = imageUrl;
+                    window.tokenAnimationUrl = animationUrl;
+                    window.tokenAltText = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+
+                    // Check if it's an animation (artifactUri different from displayUri and is HTML/interactive)
+                    const hasAnimation = metadata.artifactUri && metadata.displayUri && metadata.artifactUri !== metadata.displayUri;
+
+                    if (imageUrl && !hasAnimation) {
+                        artworkContainer.classList.add('image-only');
+                    }
+
+                    if (hasAnimation) {
+                        artworkContainer.innerHTML = createIframe(animationUrl);
+                        // Show toggle if we have both
+                        if (imageUrl) {
+                            document.getElementById('viewToggle').classList.remove('hidden');
+                            document.getElementById('btnAnimation').classList.add('active');
+                        }
+                    } else if (imageUrl) {
+                        artworkContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + window.tokenAltText + '">';
+                    } else {
+                        artworkContainer.innerHTML = '<div class="error">No artwork found</div>';
+                    }
+
+                    document.getElementById('tokenName').textContent = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+                    document.getElementById('tokenDescription').innerHTML = sanitizeHtml(metadata.description || '');
+                    document.getElementById('ownerAddress').textContent = shortenAddress(owner);
+
+                    if (metadata.tags && metadata.tags.length > 0) {
+                        const attrsHtml = metadata.tags.map(tag =>
+                            '<div class="attribute"><div class="attribute-value">' + escapeHtml(String(tag)) + '</div></div>'
+                        ).join('');
+                        document.getElementById('attributes').innerHTML = attrsHtml;
+                    }
+
+                    metadataDiv.style.display = 'block';
+
+                    let links = [];
+                    const marketUrl = getMarketplaceUrl();
+                    if (marketUrl) links.push('<a href="' + marketUrl + '" target="_blank">Objkt</a>');
+                    links.push('<a href="' + getExplorerUrl() + '" target="_blank">TzKT</a>');
+                    linksDiv.innerHTML = links.join('');
+                } catch (error) {
+                    console.error('Error loading Tezos token:', error);
+                    artworkContainer.innerHTML = '<div class="error">Error loading token: ' + error.message + '</div>';
+                }
+                return;
+            }
+
+            try {
+                const rpcUrl = RPC_URLS[TOKEN.chain];
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const contract = new ethers.Contract(TOKEN.contract, ERC721_ABI, provider);
+
+                // Fetch tokenURI and owner in parallel
+                const [tokenURI, owner] = await Promise.all([
+                    contract.tokenURI(TOKEN.tokenId),
+                    contract.ownerOf(TOKEN.tokenId)
+                ]);
+
+                // Fetch metadata
+                const metadata = await fetchMetadata(tokenURI);
+
+                // Display artwork
+                let imageUrl = getImageUrl(metadata.image || metadata.image_url);
+                let animationUrl = getImageUrl(metadata[TOKEN.animationField] || metadata.animation_url);
+
+                // Check if the image URL is actually a video - if so, treat it as animation
+                const imageIsVideo = isVideoUrl(imageUrl);
+                if (imageIsVideo && !animationUrl) {
+                    animationUrl = imageUrl;
+                    imageUrl = null;
+                }
+
+                // Store URLs globally for toggle functionality
+                window.tokenImageUrl = imageUrl;
+                window.tokenAnimationUrl = animationUrl;
+                window.tokenAltText = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+
+                // Check if the animation is a video
+                const isVideo = isVideoUrl(animationUrl);
+
+                // Check if mobile device
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+                // Collections that should always show animation (even on mobile)
+                const alwaysAnimate = ['nokori', 'primera'];
+
+                // Determine if we should show animation first based on config and conditions
+                let showAnimationFirst = animationUrl && (!isMobile || alwaysAnimate.includes(TOKEN.collectionId) || isVideo);
+
+                // Override if defaultView is set to 'image' in config
+                if (TOKEN.defaultView === 'image' && imageUrl) {
+                    showAnimationFirst = false;
+                }
+
+                // Show toggle buttons if both image and animation exist
+                // On mobile, still show buttons but may default to different view
+                if (imageUrl && animationUrl) {
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                    if (showAnimationFirst) {
+                        document.getElementById('btnAnimation').classList.add('active');
+                    } else {
+                        document.getElementById('btnImage').classList.add('active');
+                    }
+                }
+
+                // Show nokori-specific features
+                if (TOKEN.features.staticImage && TOKEN.features.staticImagePath) {
+                    window.tokenStaticImageUrl = TOKEN.features.staticImagePath;
+                    document.getElementById('btnStaticImage').style.display = '';
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                }
+                if (TOKEN.features.copyAsImage) {
+                    document.getElementById('btnCopy').style.display = '';
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                }
+                if (TOKEN.features.visibilitySettings) {
+                    loadVisibilitySettings();
+                }
+
+                // If image only (no animation), use smaller container
+                // Also use smaller container for videos
+                if ((imageUrl && !animationUrl) || isVideo) {
+                    artworkContainer.classList.add('image-only');
+                }
+
+                if (showAnimationFirst) {
+                    if (isVideo) {
+                        artworkContainer.innerHTML = '<video src="' + animationUrl + '" controls autoplay loop muted playsinline></video>';
+                    } else {
+                        artworkContainer.innerHTML = createIframe(animationUrl);
+                    }
+                } else if (imageUrl) {
+                    artworkContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + window.tokenAltText + '">';
+                } else if (animationUrl) {
+                    // Fallback to animation if no image available
+                    if (isVideo) {
+                        artworkContainer.innerHTML = '<video src="' + animationUrl + '" controls autoplay loop muted playsinline></video>';
+                    } else {
+                        artworkContainer.innerHTML = createIframe(animationUrl);
+                    }
+                } else {
+                    artworkContainer.innerHTML = '<div class="error">No artwork found</div>';
+                }
+
+                // Display metadata with year
+                let titleText = metadata.name || TOKEN.collectionName + ' #' + TOKEN.displayNum;
+                if (TOKEN.year) {
+                    titleText += ', ' + TOKEN.year + '';
+                }
+                document.getElementById('tokenName').textContent = titleText;
+                document.getElementById('tokenDescription').innerHTML = sanitizeHtml(metadata.description || '');
+                document.getElementById('ownerAddress').textContent = shortenAddress(owner);
+
+                // Display attributes
+                if (metadata.attributes && metadata.attributes.length > 0) {
+                    const attrsHtml = metadata.attributes.map(attr =>
+                        '<div class="attribute">' +
+                            '<div class="attribute-type">' + escapeHtml(attr.trait_type || '') + '</div>' +
+                            '<div class="attribute-value">' + escapeHtml(String(attr.value) || '') + '</div>' +
+                        '</div>'
+                    ).join('');
+                    document.getElementById('attributes').innerHTML = attrsHtml;
+                }
+
+                metadataDiv.style.display = 'block';
+
+                // Display links
+                let links = [];
+                const marketUrl = getMarketplaceUrl();
+                if (marketUrl) links.push('<a href="' + marketUrl + '" target="_blank">OpenSea</a>');
+                links.push('<a href="' + getExplorerUrl() + '" target="_blank">Block Explorer</a>');
+                linksDiv.innerHTML = links.join('');
+
+            } catch (error) {
+                console.error('Error loading token:', error);
+                artworkContainer.innerHTML = '<div class="error">Error loading token: ' + error.message + '</div>';
+            }
+        }
+
+        function showImage() {
+            if (!window.tokenImageUrl) return;
+            document.getElementById('artworkContainer').innerHTML = '<img src="' + window.tokenImageUrl + '" alt="' + window.tokenAltText + '">';
+            document.getElementById('btnImage').classList.add('active');
+            document.getElementById('btnAnimation').classList.remove('active');
+            document.getElementById('btnStaticImage').classList.remove('active');
+        }
+
+        function showAnimation() {
+            if (!window.tokenAnimationUrl) return;
+            if (isVideoUrl(window.tokenAnimationUrl)) {
+                document.getElementById('artworkContainer').innerHTML = '<video src="' + window.tokenAnimationUrl + '" controls autoplay loop muted playsinline></video>';
+            } else {
+                document.getElementById('artworkContainer').innerHTML = createIframe(window.tokenAnimationUrl);
+            }
+            document.getElementById('btnAnimation').classList.add('active');
+            document.getElementById('btnImage').classList.remove('active');
+            document.getElementById('btnStaticImage').classList.remove('active');
+        }
+
+        function showStaticImage() {
+            if (!window.tokenStaticImageUrl) return;
+            document.getElementById('artworkContainer').innerHTML = '<img src="' + window.tokenStaticImageUrl + '" alt="' + window.tokenAltText + '">';
+            document.getElementById('btnStaticImage').classList.add('active');
+            document.getElementById('btnAnimation').classList.remove('active');
+            document.getElementById('btnImage').classList.remove('active');
+        }
+
+        async function copyAsImage() {
+            const btn = document.getElementById('btnCopy');
+            btn.textContent = 'Copying...';
+
+            try {
+                // Use the static image if available, otherwise use the token image
+                const imageUrl = window.tokenStaticImageUrl || window.tokenImageUrl;
+                if (!imageUrl) {
+                    alert('No image available to copy');
+                    btn.textContent = 'Copy as Image';
+                    return;
+                }
+
+                // Create an image element and load it
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = imageUrl;
+                });
+
+                // Draw to canvas to get PNG blob
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                // Convert to blob
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy as Image';
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy image:', err);
+                btn.textContent = 'Copy as Image';
+                // Fallback: try opening the image in a new tab
+                const imageUrl = window.tokenStaticImageUrl || window.tokenImageUrl;
+                if (confirm('Could not copy to clipboard directly. Open image in new tab to copy manually?')) {
+                    window.open(imageUrl, '_blank');
+                }
+            }
+        }
+
+        async function loadVisibilitySettings() {
+            if (!TOKEN.features.visibilitySettings) return;
+
+            try {
+                const NOKORI_CONTRACT = '0xA8C1fc111d554C291c495a2bE71Ba58edEa208D0';
+                const VISIBILITY_ABI = [
+                    'function getTokenVisibilitySummary(uint256 tokenId) external view returns (string summary, bool useCachedAlways, bool useCachedOnlyForMobile, bool useCachedOnlyForSafariFirefox, bool showPotentialWarning)'
+                ];
+
+                const provider = new ethers.JsonRpcProvider(RPC_URLS.ethereum);
+                const contract = new ethers.Contract(NOKORI_CONTRACT, VISIBILITY_ABI, provider);
+
+                const [summary, useCachedAlways, useCachedMobile, useCachedSafari, showWarning] = await contract.getTokenVisibilitySummary(TOKEN.tokenId);
+
+                document.getElementById('visCached').checked = useCachedAlways;
+                document.getElementById('visMobile').checked = useCachedMobile;
+                document.getElementById('visSafari').checked = useCachedSafari;
+                document.getElementById('visWarning').checked = showWarning;
+
+                document.getElementById('visibilityInfo').style.display = 'block';
+            } catch (err) {
+                console.error('Failed to load visibility settings:', err);
+            }
+        }
+
+        function toggleGalleryMode() {
+            document.body.classList.toggle('gallery-mode');
+            const btn = document.getElementById('galleryBtn');
+            if (document.body.classList.contains('gallery-mode')) {
+                btn.textContent = 'Exit Gallery';
+            } else {
+                btn.textContent = 'Gallery Mode';
+            }
+        }
+
+        // Press Escape to exit gallery mode
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.body.classList.contains('gallery-mode')) {
+                toggleGalleryMode();
+            }
+        });
+
+        // Token navigation functionality
+        const TOTAL_TOKENS = {$total};
+        const WALLET_CACHE_KEY = 'connectedWallet';
+        const OWNED_TOKENS_NAV_KEY = 'ownedTokensNav_' + TOKEN.collectionId;
+        let myTokensOnly = false;
+        let ownedTokens = [];
+
+        function getModeUrl(url) {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return url;
+            var newUrl = new URL(url, window.location.origin);
+            newUrl.searchParams.set('mode', mode);
+            return newUrl.pathname + newUrl.search;
+        }
+
+        function buildTokenList() {
+            const dropdown = document.getElementById('tokenListDropdown');
+            let html = '';
+            for (let i = 1; i <= TOTAL_TOKENS; i++) {
+                const isCurrent = i === TOKEN.displayNum;
+                const isOwned = ownedTokens.includes(i);
+                let classes = [];
+                if (isCurrent) classes.push('current');
+                if (isOwned) classes.push('owned');
+
+                // If filtering by my tokens and this isn't owned, hide it
+                const style = (myTokensOnly && !isOwned) ? ' style="display:none;"' : '';
+
+                html += '<a href="' + getModeUrl(i + '.html') + '" class="' + classes.join(' ') + '"' + style + '>#' + i + (isOwned ? ' ★' : '') + '</a>';
+            }
+            dropdown.innerHTML = html;
+
+            // Scroll current token into view
+            setTimeout(() => {
+                const current = dropdown.querySelector('.current');
+                if (current) {
+                    current.scrollIntoView({ block: 'center' });
+                }
+            }, 50);
+        }
+
+        function toggleTokenList() {
+            const dropdown = document.getElementById('tokenListDropdown');
+            dropdown.classList.toggle('open');
+            if (dropdown.classList.contains('open')) {
+                buildTokenList();
+            }
+        }
+
+        function toggleMyTokensNav() {
+            const btn = document.getElementById('myTokensToggle');
+            const input = document.getElementById('walletInput');
+            let walletAddr = input.value.trim();
+
+            // If no address entered, check localStorage
+            if (!walletAddr) {
+                walletAddr = localStorage.getItem(WALLET_CACHE_KEY);
+                if (walletAddr) {
+                    input.value = walletAddr;
+                }
+            }
+
+            // Still no address? Alert user
+            if (!walletAddr) {
+                alert('Please enter your wallet address');
+                input.focus();
+                return;
+            }
+
+            // Save address
+            localStorage.setItem(WALLET_CACHE_KEY, walletAddr);
+
+            // Toggle my tokens filter
+            myTokensOnly = !myTokensOnly;
+            btn.classList.toggle('active', myTokensOnly);
+
+            // Load owned tokens if needed
+            if (ownedTokens.length === 0) {
+                loadOwnedTokensFromServer(walletAddr);
+            } else {
+                // Rebuild list with filter
+                buildTokenList();
+
+                // Open dropdown if not already open
+                const dropdown = document.getElementById('tokenListDropdown');
+                if (!dropdown.classList.contains('open')) {
+                    dropdown.classList.add('open');
+                }
+            }
+        }
+
+        function loadOwnedTokensFromServer(walletAddr) {
+            const btn = document.getElementById('myTokensToggle');
+            btn.textContent = 'Loading...';
+
+            // Fetch owner data from server
+            fetch('/collections/owners.php?collection=' + TOKEN.collectionId)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.owners) {
+                        ownedTokens = [];
+                        Object.entries(data.owners).forEach(([displayNum, owner]) => {
+                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                                ownedTokens.push(parseInt(displayNum));
+                            }
+                        });
+
+                        // Update button with count
+                        if (ownedTokens.length > 0) {
+                            btn.textContent = 'My Tokens (' + ownedTokens.length + ')';
+                        } else {
+                            btn.textContent = 'No tokens found';
+                        }
+
+                        // Rebuild list and open dropdown
+                        buildTokenList();
+                        const dropdown = document.getElementById('tokenListDropdown');
+                        if (!dropdown.classList.contains('open')) {
+                            dropdown.classList.add('open');
+                        }
+                    }
+                })
+                .catch(e => {
+                    console.error('Error loading owners:', e);
+                    btn.textContent = 'Error';
+                });
+        }
+
+        // Initialize
+        function initTokenNav() {
+            const walletAddr = localStorage.getItem(WALLET_CACHE_KEY);
+            if (walletAddr) {
+                document.getElementById('walletInput').value = walletAddr;
+            }
+        }
+
+        // Allow Enter key in wallet input
+        document.getElementById('walletInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                toggleMyTokensNav();
+            }
+        });
+
+        initTokenNav();
+        loadToken();
+
+        // Theme
+        {$themeToggleScript}
+        initTheme();
+    </script>
+</body>
+</html>
+HTML;
+}
+
+function generateGridPage($collection) {
+    $id = $collection['id'];
+    $name = htmlspecialchars($collection['name']);
+    $chain = $collection['chain'];
+    $chainId = $collection['chainId'] ?? 1;
+    $contract = $collection['contract'] ?? '';
+    $supply = $collection['supply'];
+    $tokenIdStart = $collection['tokenIdStart'] ?? 0;
+    $tokenIds = isset($collection['tokenIds']) ? json_encode($collection['tokenIds']) : 'null';
+    $year = $collection['year'] ?? '';
+    $collab = isset($collection['collaboration']) ? ' (w/ ' . htmlspecialchars($collection['collaboration']) . ')' : '';
+    $thumbBase = "/images/grid-thumbs/{$id}/";
+
+    // Grid aspect ratio (default square, override per collection)
+    $gridAspectRatio = $collection['gridAspectRatio'] ?? '1';
+
+    // Only enable trait filtering for nokori for now
+    $enableTraits = ($id === 'nokori') ? 'true' : 'false';
+
+    $defaultTheme = $collection['defaultTheme'] ?? 'light';
+    $themeCSSVars = getThemeCSSVars();
+    $themeToggleBtn = getThemeToggleButton();
+    $themeToggleScript = getThemeToggleScript($defaultTheme);
+
+    // Marketplace URL config
+    if ($chain === 'tezos') {
+        $marketplaceName = 'Objkt';
+    } elseif ($chain === 'arbitrum') {
+        $marketplaceName = 'OpenSea';
+    } else {
+        $marketplaceName = 'OpenSea';
+    }
+
+    // Explorer URL
+    if ($chain === 'tezos') {
+        $explorerUrl = "https://tzkt.io/{$contract}";
+    } elseif ($chain === 'arbitrum') {
+        $explorerUrl = "https://arbiscan.io/address/{$contract}";
+    } else {
+        $explorerUrl = "https://etherscan.io/address/{$contract}";
+    }
+
+    return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$name} - Grid View</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+{$themeCSSVars}
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            padding: 40px 20px;
+            padding-top: 60px;
+            color: var(--text);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .top-nav a, .top-nav button {
+            font-size: 0.85em;
+            color: var(--nav-text);
+            text-decoration: none;
+            background: var(--nav-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px var(--nav-shadow);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .top-nav a:hover, .top-nav button:hover {
+            color: var(--nav-hover-text);
+            background: var(--nav-hover-bg);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .chain-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .chain-ethereum { background: #627eea20; color: #627eea; }
+        .chain-arbitrum { background: #28a0f020; color: #28a0f0; }
+        .chain-tezos { background: #2c7df720; color: #2c7df7; }
+
+        /* Filter / Search Bar */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            font-size: 0.85em;
+            padding: 6px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            width: 250px;
+            font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+        }
+
+        .filter-btn {
+            font-size: 0.8em;
+            padding: 6px 12px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-right: 8px;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }
+
+        .filter-btn.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .size-toggle {
+            display: flex;
+            gap: 4px;
+            margin-left: 10px;
+        }
+
+        .size-toggle button {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .size-toggle button:hover {
+            border-color: #999;
+        }
+
+        .size-toggle button.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .filter-info {
+            text-align: center;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-bottom: 40px;
+        }
+
+        .grid.size-small {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 4px;
+        }
+
+        .grid.size-medium {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .grid-item {
+            position: relative;
+            aspect-ratio: {$gridAspectRatio};
+            overflow: hidden;
+            background: var(--grid-item-bg);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .grid-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .grid-item .number {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: #fff;
+            font-size: 0.75em;
+            padding: 15px 6px 4px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .grid-item:hover .number {
+            opacity: 1;
+        }
+
+        .grid-item.no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            background: var(--grid-placeholder);
+        }
+
+        .grid-item.no-image .number {
+            opacity: 1;
+            background: none;
+            position: static;
+            color: var(--text-muted);
+            padding: 0;
+        }
+
+        .grid-item.hidden {
+            display: none;
+        }
+
+        .grid-item.loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background-color: var(--loading-a); }
+            50% { background-color: var(--loading-b); }
+        }
+
+        /* Trait filter panel */
+        .trait-filters {
+            display: none;
+            background: var(--trait-bg);
+            border: 1px solid var(--trait-border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .trait-filters.open {
+            display: block;
+        }
+
+        .trait-group {
+            margin-bottom: 12px;
+        }
+
+        .trait-group-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .trait-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .trait-option {
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border: 1px solid var(--btn-border);
+            border-radius: 3px;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .trait-option:hover {
+            border-color: #999;
+        }
+
+        .trait-option.active {
+            background: var(--btn-active-bg);
+            color: var(--btn-active-text);
+            border-color: var(--btn-active-border);
+        }
+
+        .trait-count {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .back-link a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--link-border);
+            padding-bottom: 2px;
+            margin: 0 15px;
+        }
+
+        .back-link a:hover {
+            border-color: var(--text);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 40px 10px;
+                padding-top: 55px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 4px;
+            }
+
+            .grid.size-small {
+                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            }
+
+            .grid.size-large {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .controls {
+                gap: 6px;
+            }
+
+            .search-input {
+                width: 180px;
+            }
+
+            .top-nav {
+                flex-wrap: wrap;
+            }
+
+            .top-nav a {
+                font-size: 0.75em;
+                padding: 5px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            var def = '{$defaultTheme}';
+            if (mode === '1' || (!mode && def === 'dark')) document.body.classList.add('dark');
+        })();
+    </script>
+    <div class="top-nav">
+        <div class="top-nav-links">
+            <a href="/collections/{$id}/">← Token List</a>
+            <a href="/collections/">All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">Back to Site</a>
+        </div>
+        {$themeToggleBtn}
+    </div>
+
+    <div class="container">
+        <h1>{$name}<span class="chain-badge chain-{$chain}">{$chain}</span></h1>
+        <p class="subtitle">{$supply} tokens{$collab}</p>
+
+        <div class="controls">
+            <button class="filter-btn" id="traitFilterBtn" onclick="toggleTraitFilters()" style="display:none;">Traits ▼</button>
+            <button class="filter-btn" id="clearTraitsBtn" onclick="clearTraitFilters()" style="display:none;">Clear Traits</button>
+            <div class="size-toggle" style='margin-left: 5px;'>
+                <button onclick="setGridSize('small')" id="sizeSmall">S</button>
+                <button onclick="setGridSize('medium')" id="sizeMedium">M</button>
+                <button onclick="setGridSize('large')" id="sizeLarge" class="active">L</button>
+            </div>
+        </div>
+
+        <div class="trait-filters" id="traitFilters"></div>
+        <div class="filter-info" id="filterInfo"></div>
+
+        <div class="grid" id="grid"></div>
+
+        <div class="back-link">
+            <a href="/collections/{$id}/">← Token List</a>
+            <a href="/collections/">All Collections</a>
+            <a href="/art.php" onclick="var w=window.open('','artsite');try{if(w.location.href!=='about:blank'){w.focus();return false;}}catch(e){w.focus();return false;}return true;">← Back to Site</a>
+        </div>
+    </div>
+
+    <script>
+        const COLLECTION = {
+            id: '{$id}',
+            name: '{$name}',
+            chain: '{$chain}',
+            supply: {$supply},
+            thumbBase: '{$thumbBase}',
+            tokenIds: {$tokenIds},
+            tokenIdStart: {$tokenIdStart},
+            enableTraits: {$enableTraits}
+        };
+
+        const MARKETPLACE_NAME = '{$marketplaceName}';
+
+        let allTokens = [];
+        let traitIndex = {};
+        let activeTraitFilters = {};
+        let metadataLoaded = false;
+
+        // Build grid
+        function buildGrid() {
+            const grid = document.getElementById('grid');
+            let html = '';
+            for (let i = 1; i <= COLLECTION.supply; i++) {
+                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
+                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + i + '</div>' +
+                    '</div>';
+            }
+            grid.innerHTML = html;
+        }
+
+        // Load metadata from API for filtering / searching by name
+        async function loadMetadata() {
+            try {
+                const response = await fetch('/collections/metadata-api.php?collection=' + COLLECTION.id);
+                if (!response.ok) {
+                    console.log('No cached metadata available (HTTP ' + response.status + ')');
+                    return;
+                }
+                const data = await response.json();
+                if (data.tokens && data.tokens.length > 0) {
+                    allTokens = data.tokens;
+                    metadataLoaded = true;
+                    if (COLLECTION.enableTraits) {
+                        buildTraitIndex();
+                        if (Object.keys(traitIndex).length > 0) {
+                            document.getElementById('traitFilterBtn').style.display = '';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('Metadata not available:', e.message);
+            }
+        }
+
+        function buildTraitIndex() {
+            traitIndex = {};
+            allTokens.forEach(token => {
+                const attrs = token.attributes || [];
+                attrs.forEach(attr => {
+                    const type = attr.trait_type;
+                    const value = String(attr.value);
+                    if (!type) return;
+                    if (!traitIndex[type]) traitIndex[type] = {};
+                    if (!traitIndex[type][value]) traitIndex[type][value] = [];
+                    traitIndex[type][value].push(token.displayNum);
+                });
+            });
+
+            // Build trait filter UI
+            const container = document.getElementById('traitFilters');
+            let html = '';
+            const sortedTypes = Object.keys(traitIndex).sort();
+            sortedTypes.forEach(type => {
+                const values = Object.keys(traitIndex[type]).sort();
+                html += '<div class="trait-group">';
+                html += '<div class="trait-group-title">' + escapeHtml(type) + '</div>';
+                html += '<div class="trait-options">';
+                values.forEach(value => {
+                    const count = traitIndex[type][value].length;
+                    html += '<span class="trait-option" data-type="' + escapeAttr(type) + '" data-value="' + escapeAttr(value) + '" onclick="toggleTraitFilter(this)">' +
+                        escapeHtml(value) + '<span class="trait-count">(' + count + ')</span></span>';
+                });
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(text) {
+            return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function getModeUrl(url) {
+            var params = new URLSearchParams(window.location.search);
+            var mode = params.get('mode');
+            if (!mode) return url;
+            var newUrl = new URL(url, window.location.origin);
+            newUrl.searchParams.set('mode', mode);
+            return newUrl.pathname + newUrl.search;
+        }
+
+        function goToToken(displayNum) {
+            window.location.href = getModeUrl('/collections/' + COLLECTION.id + '/' + displayNum + '.html');
+        }
+
+        function applyFilters() {
+            const items = document.querySelectorAll('.grid-item');
+            let visibleCount = 0;
+
+            // Determine which displayNums pass trait filters
+            let traitPassSet = null;
+            const activeTypes = Object.keys(activeTraitFilters);
+            if (activeTypes.length > 0) {
+                let sets = activeTypes.map(type => {
+                    const values = activeTraitFilters[type];
+                    const combined = new Set();
+                    values.forEach(v => {
+                        (traitIndex[type][v] || []).forEach(num => combined.add(num));
+                    });
+                    return combined;
+                });
+                traitPassSet = sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+            }
+
+            items.forEach(item => {
+                const num = parseInt(item.dataset.displayNum);
+                let show = true;
+
+                if (traitPassSet && !traitPassSet.has(num)) {
+                    show = false;
+                }
+
+                if (show) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            // Update filter info
+            const filterInfo = document.getElementById('filterInfo');
+            if (Object.keys(activeTraitFilters).length > 0) {
+                filterInfo.textContent = 'Showing ' + visibleCount + ' of ' + COLLECTION.supply + ' tokens';
+                filterInfo.style.display = 'block';
+            } else {
+                filterInfo.style.display = 'none';
+            }
+        }
+
+        function toggleTraitFilters() {
+            const panel = document.getElementById('traitFilters');
+            const btn = document.getElementById('traitFilterBtn');
+            panel.classList.toggle('open');
+            btn.textContent = panel.classList.contains('open') ? 'Traits ▲' : 'Traits ▼';
+        }
+
+        function toggleTraitFilter(el) {
+            const type = el.dataset.type;
+            const value = el.dataset.value;
+            el.classList.toggle('active');
+
+            if (!activeTraitFilters[type]) activeTraitFilters[type] = [];
+
+            if (el.classList.contains('active')) {
+                activeTraitFilters[type].push(value);
+            } else {
+                activeTraitFilters[type] = activeTraitFilters[type].filter(v => v !== value);
+                if (activeTraitFilters[type].length === 0) delete activeTraitFilters[type];
+            }
+
+            updateClearButton();
+            applyFilters();
+        }
+
+        function clearTraitFilters() {
+            activeTraitFilters = {};
+            document.querySelectorAll('.trait-option.active').forEach(el => el.classList.remove('active'));
+            updateClearButton();
+            applyFilters();
+        }
+
+        function updateClearButton() {
+            const hasFilters = Object.keys(activeTraitFilters).length > 0;
+            document.getElementById('clearTraitsBtn').style.display = hasFilters ? '' : 'none';
+        }
+
+        function setGridSize(size) {
+            const grid = document.getElementById('grid');
+            grid.classList.remove('size-small', 'size-large');
+            if (size === 'small') grid.classList.add('size-small');
+            if (size === 'large') grid.classList.add('size-large');
+
+            document.querySelectorAll('.size-toggle button').forEach(b => b.classList.remove('active'));
+            document.getElementById('size' + size.charAt(0).toUpperCase() + size.slice(1)).classList.add('active');
+
+            localStorage.setItem('gridSize_' + COLLECTION.id, size);
+        }
+
+        function restoreGridSize() {
+            const saved = localStorage.getItem('gridSize_' + COLLECTION.id);
+            if (saved) {
+                setGridSize(saved);
+            }
+        }
+
+        // Initialize
+        buildGrid();
+        restoreGridSize();
+        // Metadata and filters
+        loadMetadata();
+
+        // Theme
+        {$themeToggleScript}
+        initTheme();
+    </script>
+</body>
+</html>
+HTML;
+}

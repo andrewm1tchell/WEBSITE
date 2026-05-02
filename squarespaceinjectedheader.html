@@ -1,0 +1,637 @@
+<script>
+    (function() {
+        var currentPath = window.location.pathname.toLowerCase();
+        if (currentPath !== "/" && currentPath.indexOf("/config/") < 0 && currentPath.indexOf("shop") < 0 && currentPath.indexOf("cart") < 0 && currentPath.indexOf("checkout") < 0 && currentPath.indexOf("commerce") < 0) {
+            if(currentPath.endsWith("/art")) {
+                window.location="https://andrewmitchell-art.xyz/art.php";
+            } else if(currentPath.indexOf("flowersofalfiren") > -1){
+                window.location="https://andrewmitchell-art.xyz/art/flowersofalfiren.php";
+            } else if(currentPath.indexOf("skymeadow") > -1){
+                window.location="https://andrewmitchell-art.xyz/art/skymeadow.php";
+            } else if(currentPath.indexOf("gardenscapes") > -1){
+                window.location="https://andrewmitchell-art.xyz/art/aprilshowers.php";
+            } else if(currentPath.indexOf("primera") > -1){
+                window.location="https://andrewmitchell-art.xyz/art/primera.php";
+            } else if(currentPath.indexOf("abstract-dynamism") > -1){
+                window.location="https://andrewmitchell-art.xyz/art/flume.php";
+            } else if(currentPath.indexOf("modulo") > -1){
+                window.location="https://andrewmitchell-art.xyz/art/modulo.php";
+            } else if(currentPath.indexOf("memory-loss") > -1){
+                window.location="https://andrewmitchell-art.xyz/art/memoryloss.php";
+            }else if(currentPath.indexOf("about") > -1){
+                window.location="https://andrewmitchell-art.xyz/about.php";
+            }else if(currentPath.indexOf("nft") > -1){
+                window.location="https://andrewmitchell-art.xyz/link.php";
+            }else {
+                window.location.replace("/");
+            }
+        }
+
+
+    })();
+
+</script>
+
+<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAMAMDAAAAEAIACoJQAANgAAACAgAAABACAAqBAAAN4lAAAQEAAAAQAgAGgEAACGNgAAKAAAADAAAABgAAAAAQAgAAAAAAAAJAAAAAAAAAAAAAAAAAAAAAAAACEjJOohIyTqISMk6iEjJOohIyTqISMk6iEjJOohIyTqISMk6iEjJOohIyTqISMk6iEjJOoeICHqIyUm6mVqaurY4uHq9f/+6vT//er1//3q9///6rrCwuo2OTnqb3R06u349ur1//7q9v//6pmfn+osLzDqucLB6vf//+r0//3q9///6r7GxeorLS7qICIj6iEiI+opKyzqvsbF6vf//+r0//3q9f/+6nd8fOoeHyDqISMk6iEjJOohIyTqISMk6iEjJP8hIyT/ISMk/yEjJP8hIyT/ISMk/yEjJP8hIyT/ISMk/yEjJP8gIiP/HiAh/yEjJP9ESEj/maCf/+Pt7P/1//7/9P/9//b//v/x+/r/q7Ky/zw/QP9WWlv/2OLg//X//v/3////xMzM/zo8Pf9iZ2f/6/X0//X//v/0//3/8vz6/3Z7e/8fISL/ISMk/x8hIv89QUH/2+Xj//b////1//7/7Pb0/1dbW/8eICH/ISMk/yEjJP8hIyT/ISMk/yEjJP8hIyT/ISMk/yEjJP8hIyT/ISMk/yAiI/8fISL/HiAh/x4gIf8qLC3/UVVW/5mgn//d5uX/9v/+//X//v/1//7/9////9zl5P98goL/KCss/1hcXf/Y4N//9v////f////S29r/Sk1N/zI1Nv/Fzs3/9/////T//f/3////xMzM/zE0NP8gIiP/ISMk/x4fIP9obW3/8fv6//T//f/2////1N3c/zc6Ov8gIiP/ISMk/yEjJP8hIyT/ISMk/yEjJP8fISL/HiAh/x8gIf8fISL/IiQl/yksLf85PDz/Vlpa/4WLi/+9xcT/5/Hw//f////2//7/9f/+//f////n8fD/pKyr/0dKS/8hIyT/a3Bw/93m5f/2////9////9bf3v9TV1j/ICIj/5CWlv/0/v3/9P/9//X//v/u+Pb/aW5u/x4gIf8hIyT/ISMk/yEjJP+fpqb/9/////T//f/3////rrW0/yQmJ/8hIyT/ISMk/yEjJP8hIyT/ISMk/6GpqP+WnZz/j5aV/5CXlv+ZoJ//qbGw/8DJyP/Y4eD/6/b0//b//v/3////9v////f////1/v3/3+no/6WtrP9VWVn/IiQl/y8xMv+OlZT/6fLx//b////3////0drZ/1NXWP8cHh//YWZm/+fw8P/1//7/9P/9//f///+ttbT/KSss/yAiI/8hIyT/ICIj/zc5Ov/T29r/9v////T//f/1//7/e4GB/x4gIf8hIyT/ISMk/yEjJP8hIyT/ISMk/+759//3//7/+v////v////7////+/////v////5////+P////X//v/t+Pb/2+Xj/7e/vv9/hIT/REhI/yEjJP8iJCX/W19g/7/Hxv/0/fz/9v////X+/f+9xsX/SEtM/xweH/9FSUn/0trZ//b////0//3/9v///9zl5P9KTk7/HyAh/yEjJP8hIyT/HiAh/2dra//w+vn/9P/9//X//v/m7+7/TE9Q/x4gIf8hIyT/ISMk/yEjJP8hIyT/ISMk/1tfX/9tcnL/h42N/5yjov+osK//rbW0/6uzsv+jqqr/kpmZ/3l/fv9aXl//Oz8//yQmJ/8bHR7/Jykq/1ZaWv+nr67/6PLx//f////3////6fLx/5adnP80Nzf/HB4f/zo9Pv++xsb/9v////T//f/1//7/8Pn4/3h+fv8gIiP/ISMk/yEjJP8hIyT/JCYn/6mwsP/3////9P/9//f///+/x8f/Ky0u/yAiI/8hIyT/ISMk/yEjJP8hIyT/ISMk/7W9vP+Bh4f/U1dX/zc6O/8qLC3/JCYn/yEjJP8fISL/HR8g/x4fIP8jJSb/MTQ1/05SUv9/hYX/u8PC/+nz8f/4////+P////D6+P+9xcT/XmJi/yMmJ/8dHyD/Oj0+/7e/vv/2//7/9P/9//T//f/1//7/n6am/ygqK/8gIiP/ISMk/yEjJP8fISL/RklK/+Dp6P/1//7/9P/9//b///+Fior/HiAh/yEjJP8hIyT/ISMk/yEjJP8hIyT/ISMk/9Xe3f/x+fj/1+Df/8/Y1//Cysn/rbW0/52ko/+Vm5v/l56d/6Ssq/+4wcD/0drZ/+nz8f/3//7/+v////f//v/m8e//uMC//2twcP8tMDH/HiAh/x4gIf9GSUr/vsbG//b//v/0//3/9P/9//b///+2vr3/NDY3/x8hIv8hIyT/ISMk/yEjJP8gIiP/jJKS//b////0//3/9f/+/+Lr6v9ITE3/HyEi/yEj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Xv+AhoX/2OHg//j////h6+n/tb28/4CGhv9TV1j/NTc4/0RHSP+gp6b/5O7t/8nS0f+Ahob/TlJS/+P0+v/s+fv/9P/9//T+/P/r9vT/5O7t/9Lb2v+mraz/mZ+f/8HKyP/W397/lp2d/1NXV/9bYGD/dHl5/1hcXf8wMzT/QENE/5ifn//g6uj/1+Df/8nS0f+3v77/fYOD/0FERf8hIyT/JSco/3J4eP+7w8L/g4mJ/zc6O/8eICH/HR8g/x4fIP8eICH/RUlJ/6uzsv/x+fj/+P////L8+//s9vT/2OHg/7zEw/+ttbT/1+Df//f////y+/v/1+Df//H9/P/n9vv/5fX6/+/8/P/1//7/8vz7/+n08v/i7Ov/xs/O/56lpP+ss7L/4uvq/9nj4v+Jj4//SExM/1RYWf91enr/YWZm/zk8Pf9aXl//tLy7/8LLyv+iqan/tb28/8vU0v+stLP/bXJy/zo8Pf9TV1f/ucHB/83X1f+DiYn/PUBB/yAiI/8eICH/HiAh/ykrLP9zeHj/0drZ/9vl4//I0c//2ePi//L7+v/6////+P////b////1//7/9v////T//f/0//3/7vv8/+T0+v/n9vv/8v39//X//f/w+vj/6PLx/97o5/+6wsH/p66u/9Xf3f/1/v3/1d7d/4OJif9BRUX/S09Q/3J3d/9pbm7/T1NT/4WLi//M1dP/oamo/3B1df+PlZX/xs/O/9Ha2f+qsbH/hIqK/7S8u//t+Pb/1+Hf/5OZmf9PUlP/KCor/x0fIP8dHyD/P0JD/5uiov/N1tX/pKyr/4KIiP+WnZ3/vsbF/9rk4//p9PL/8Pv5//T//f/0//3/9P/9//P+/f/q+Pv/4/P6/+v5+//0/v3/9P79/+349v/n8fD/1uDf/7S8u//Aycj/7PX0//P8+//M1tT/gIaG/z1AQf9DRkf/bXJy/3J3eP+Ahob/ydHQ/9Xf3f+Ijo7/S09Q/15iY/+epaT/z9jX/9zm5P/v+Pf/+P///+v18//N1tX/qrKx/3Z7e/9BREX/IyUm/yEjJP9aXl//vsbF/9Lc2/+OlJT/UFNU/z5BQv9MUFH/XmNj//T//f/0//3/9P/9//T//f/0//3/8f38/+f2+//k9Pr/7vv8//T//f/z/fv/7Pb1/+Xv7v/N1tX/tb28/9DZ2P/n8fD/3efl/8TN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">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous">
+</script>
+<script>
+    //setTimeout(function(){$('.header').css('display','none');},10);
+</script>
+
+<style>
+    header{
+        background-color: #333; /* Adjust as needed */
+    }
+
+    .fade-in-fast {
+        opacity: 0 !important;;
+        transition: opacity 1s ease-in !important;
+    }
+    .fade-in-fast.show {
+        opacity: 1 !important;;
+    }
+
+
+
+    .font-16{
+        font-size:16px;
+    }
+
+    .navbar {
+        font-family: 'Satoshi-Regular' !important;
+        display: flex;
+        align-items: center;
+    }
+
+    #toggleDarkLight {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        margin-top: 0;
+        line-height: 1;
+        background: none !important;
+        border: none !important;
+    }
+
+    #toggleDarkLight img {
+        display: block;
+    }
+
+
+</style>
+<script>
+
+    let isDarkMode = true;
+
+    function setInitialLightDarkMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let mode = urlParams.get('mode');
+
+        if (mode === null) {
+            const cookieMode = getCookie('mode');
+            console.log(cookieMode);
+            if (cookieMode !== "") {
+                mode = cookieMode;
+                if (mode === "0") {
+                    setLightMode(true);  // Use dark mode if mode is 0
+                    isDarkMode = true;   // Update the local variable
+                } else {
+                    setLightMode(false); // Use light mode if mode is 1
+                    isDarkMode = false;  // Update the local variable
+                }
+            } else {
+                const now = new Date();
+                const currentHour = now.getHours();
+
+                // Default to dark mode and switch to light mode based on time
+                if (currentHour >= 10 && currentHour < 16) {
+                    setLightMode(true); // Set to light mode during the day
+                    isDarkMode = true;  // Update the local variable
+                    mode = '1'; // Update mode
+                } else {
+                    setLightMode(false);  // Set to dark mode during the night
+                    isDarkMode = false;   // Update the local variable
+                    mode = '0'; // Update mode
+                }
+            }
+        } else {
+            if (mode === "0") {
+                setLightMode(true);  // Use dark mode if mode is 0
+                isDarkMode = true;   // Update the local variable
+            } else {
+                setLightMode(false); // Use light mode if mode is 1
+                isDarkMode = false;  // Update the local variable
+            }
+        }
+        updateNavigationLinks(!isDarkMode);
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+
+    function setLightMode(isDark) {
+        if (isDark) {
+            $('main > article > section > div:eq(1)').removeClass("dark-bg").addClass("light-bg");
+            $(".light-text").removeClass("light-text").addClass("dark-text");
+            $(".dark-bg").removeClass("dark-bg").addClass("light-bg");
+            $(".light-border-top").removeClass("light-border-top").addClass("dark-border-top");
+            $(".light-border-bottom").removeClass("light-border-bottom").addClass("dark-border-bottom");
+
+            $(".light-border").removeClass("light-border").addClass("dark-border2");
+            $(".light-border2").removeClass("light-border2").addClass("dark-border2");
+
+            $("#darkMode").css("filter", "invert(0)");
+            let search = window.location.href;
+            if(search.indexOf("shop") > -1) {
+                $(".content-wrapper").css("filter","invert(1)");
+
+                $('a[href="https://www.niftygateway.com/collections/touchgrass/"]').css("color","yellow");
+
+                $('a[href="https://deca.art/collection/flowers-of-alfiren"]').css("color","yellow");
+                $('a[href="https://deca.art/collection/sky-meadow-by-andrew-mitchell"]').css("color","yellow");
+                $('a[href="https://deca.art/collection/sky-meadow-by-andrew-mitchell"]').css("color","yellow");
+                $('a[href="https://deca.art/token/ethereum/0xfE0062a67615F40a7f21B6f2f446F2C15850dD7A/4"]').css("color","yellow");
+                $(".sqs-add-to-cart-button.sqs-suppress-edit-mode.sqs-button-element--primary").css("background-color","#ff8400");
+            }
+            $(".floating-cart").css("filter","invert(0)");
+
+        } else {
+            $('main > article > section > div:eq(1)').removeClass("light-bg").addClass("dark-bg");
+            $(".dark-text").removeClass("dark-text").addClass("light-text");
+            $(".light-bg").removeClass("light-bg").addClass("dark-bg");
+            $(".dark-border").removeClass("dark-border").addClass("light-border2");
+            $(".dark-border2").removeClass("dark-border2").addClass("light-border2");
+            $(".dark-border-top").removeClass("dark-border-top").addClass("light-border-top");
+            $(".dark-border-bottom").removeClass("dark-border-bottom").addClass("light-border-bottom");
+            let search = window.location.href;
+            if(search.indexOf("shop") > -1) {
+                $(".content-wrapper").css("filter","invert(0)");
+                $(".content-wrapper").css("background-color","#000000");
+                $('a[href="https://www.niftygateway.com/collections/touchgrass/"]').css("color","#007bff");
+
+                $('a[href="https://deca.art/collection/flowers-of-alfiren"]').css("color","#007bff");
+                $('a[href="https://deca.art/collection/sky-meadow-by-andrew-mitchell"]').css("color","#007bff");
+                $('a[href="https://deca.art/token/ethereum/0xfE0062a67615F40a7f21B6f2f446F2C15850dD7A/4"]').css("color","#007bff");
+                $(".sqs-add-to-cart-button.sqs-suppress-edit-mode.sqs-button-element--primary").css("background-color","#007bff");
+            }
+
+            $(".floating-cart").css("filter","invert(1)");
+
+            $("#darkMode").css("filter", "invert(1)");
+        }
+        $("#toggleDarkLight").blur();
+    }
+
+    function toggleLightDark() {
+        if (isDarkMode) {
+            setLightMode(false);
+            updateNavigationLinks(isDarkMode);
+        } else {
+            setLightMode(true);
+            updateNavigationLinks(isDarkMode);
+        }
+        isDarkMode = !isDarkMode; // Toggle the local variable
+    }
+
+    $(document).ready(function() {
+        setInitialLightDarkMode();
+        $("#toggleDarkLight").on("click", function() {
+            toggleLightDark();
+        });
+    });
+
+    function updateNavigationLinks(isDark) {
+        const mode = isDark ? '1' : '0'; // 0 for dark mode, 1 for light mode
+        document.querySelectorAll('.nav-link-2').forEach(function(link) {
+            const href = link.getAttribute('href').split('?')[0]; // Get the base URL without any existing query parameters
+            const newHref = `${href}?mode=${mode}`; // Create the new href with the mode query parameter
+            link.setAttribute('href', newHref); // Update the href attribute with the mode query parameter
+        });
+        const baseUrl = window.location.href.split('?')[0]; // Get the base URL without any existing query parameters
+        const newUrl = `${baseUrl}?mode=${mode}`; // Construct the new URL with the mode query parameter
+        history.replaceState({}, document.title, newUrl); // Replace the URL in the browser without reloading the page
+
+        // Update the cookies with the mode
+        document.cookie = `mode=${mode}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/`;
+    }
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.fade-in-fast').forEach(function(element) {
+            element.classList.add('show');
+        });
+        // Function to check if the screen width is less than or equal to 768px (typically considered as mobile)
+        function adjustFooterTextSize() {
+            if ($(window).width() <= 768) {
+                $("#footer-text").css("font-size", "14px");
+            } else {
+            }
+        }
+
+        // Call the function on page load
+        adjustFooterTextSize();
+
+        // Call the function when the window is resized
+        $(window).resize(function() {
+            adjustFooterTextSize();
+        });
+    });</script>
+
+<nav id="nav" class="navbar navbar-expand navbar-custom navbar-transparent light-border-bottom fade-in-fast">
+    <div class="navbar-nav mr-auto ">
+    <span class="nav-item nav-link underline light-text font-16 fade-in-fast" style="margin-top:2px;"><a class="fade-in-fast light-text" href="andrewmitchell.xyz" style="text-decoration: underline;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16">
+  <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"></path>
+</svg>
+  <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"></path>
+        </svg></a></span>
+        <a class="nav-item nav-link nav-link-2 underline light-text font-16 fade-in-fast" href="https://andrewmitchell-art.xyz/art.php">ART</a>
+        <a class="nav-item nav-link nav-link-2 underline light-text font-16 fade-in-fast" href="https://andrewmitchell-art.xyz/collections">CATALOG</a>
+        <a class="nav-item nav-link nav-link-2 underline light-text font-16 fade-in-fast" href="https://andrewmitchell-art.xyz/about.php">ABOUT</a>
+    </div>
+    <button id="toggleDarkLight" class="btn ml-auto fade-in-fast"  style="background: none;" ><img id="darkMode" height="16px" width="16px" style="filter:invert(1)" src="https://andrewmitchell-art.xyz/images/dark-icon.png" alt="Light Dark Toggle"/></button>
+</nav>
+
+<!-- Centered Homepage Image -->
+<style>
+    /* Control Squarespace default wrappers and containers */
+    #siteWrapper,
+    .site-wrapper,
+    #site,
+    main,
+    article,
+    section {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+
+    /* Ensure body and html don't create extra space */
+    html, body {
+        height: 100vh !important;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+
+    body.homepage-image-active {
+        overflow: hidden;
+    }
+
+    #homepage-center-image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 100px);
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Carousel container */
+    #homepage-carousel {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Carousel images */
+    .carousel-image {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 0.8s ease-in-out;
+        pointer-events: none;
+    }
+
+    .carousel-image.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Initial fade-in animation for first load */
+    .carousel-image.initial-fade {
+        animation: fadeInInitial 1.5s ease-in forwards;
+    }
+
+    @keyframes fadeInInitial {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Carousel indicators */
+    #carousel-indicators {
+        position: absolute;
+        bottom: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 101;
+    }
+
+    .carousel-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.3s ease;
+        border: none;
+        padding: 0;
+    }
+
+    /* Light mode - dark dots */
+    body.light-bg .carousel-indicator {
+        background: rgba(0, 0, 0, 0.4);
+    }
+
+    body.light-bg .carousel-indicator.active {
+        background: rgba(0, 0, 0, 0.9);
+        transform: scale(1.2);
+    }
+
+    /* Dark mode - light dots */
+    body.dark-bg .carousel-indicator {
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    body.dark-bg .carousel-indicator.active {
+        background: rgba(255, 255, 255, 0.9);
+        transform: scale(1.2);
+    }
+
+    /* Desktop: Add padding and border */
+    @media (min-width: 769px) {
+        #homepage-center-image-container {
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+
+        #homepage-carousel {
+            width: 90%;
+            height: 100%;
+            border: 2px solid;
+        }
+
+        .carousel-image {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Dark mode - white border */
+        body.dark-bg #homepage-carousel {
+            border-color: white;
+        }
+
+        /* Light mode - black border */
+        body.light-bg #homepage-carousel {
+            border-color: black;
+        }
+    }
+
+    /* Mobile: Fill viewport, allow vertical scroll with aspect ratio preserved */
+    @media (max-width: 768px) {
+        #homepage-center-image-container {
+            align-items: flex-start;
+            margin-bottom: 40px;
+            height: calc(110vh - 100px);
+        }
+
+        #homepage-carousel {
+            width: 100%;
+            height: 100%;
+        }
+
+        .carousel-image {
+            width: 100%;
+            height: 100%;
+            min-height: auto;
+            max-height: none;
+            object-fit: cover;
+            object-position: center top;
+        }
+    }
+
+    /* Hide Squarespace default content on homepage */
+    body.homepage-custom main > article > section > div:nth-of-type(2) {
+        display: none !important;
+    }
+</style>
+
+<div id="homepage-center-image-container">
+    <div id="homepage-carousel">
+        <!-- Images will be dynamically inserted by JavaScript -->
+    </div>
+
+    <!-- Carousel indicators -->
+    <div id="carousel-indicators"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Define all available images - 20 background images
+        const allImages = [
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/1.jpg", alt: "Background 1" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/2.jpg", alt: "Background 2" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/3.jpg", alt: "Background 3" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/4.jpg", alt: "Background 4" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/5.jpg", alt: "Background 5" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/6.jpg", alt: "Background 6" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/7.jpg", alt: "Background 7" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/8.jpg", alt: "Background 8" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/9.jpg", alt: "Background 9" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/10.jpg", alt: "Background 10" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/11.jpg", alt: "Background 11" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/12.jpg", alt: "Background 12" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/13.jpg", alt: "Background 13" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/14.jpg", alt: "Background 14" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/15.jpg", alt: "Background 15" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/16.jpg", alt: "Background 16" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/17.jpg", alt: "Background 17" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/18.jpg", alt: "Background 18" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/19.jpg", alt: "Background 19" },
+            { src: "https://andrewmitchell-art.xyz/images/backgrounds/20.jpg", alt: "Background 20" }
+        ];
+
+        // Randomly select 3 images
+        function getRandomImages(arr, count) {
+            const shuffled = [...arr].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        // ── HERO MODE ──────────────────────────────────────────────────
+        // true  → desktop shows the single hero image, mobile shows random carousel
+        // false → both desktop and mobile show the random carousel (original behaviour)
+        const USE_DESKTOP_HERO = true;
+        // ───────────────────────────────────────────────────────────────
+
+        const DESKTOP_HERO = { src: "https://andrewmitchell-art.xyz/images/hero/MUGEN%20-%202026-05-01T023010.017.jpg", alt: "Hero" };
+
+        const isDesktop = window.innerWidth >= 769;
+        const selectedImages = (USE_DESKTOP_HERO && isDesktop)
+            ? [DESKTOP_HERO]
+            : getRandomImages(allImages, 3);
+
+        // Inject the selected images into the carousel
+        const carouselContainer = document.getElementById('homepage-carousel');
+        selectedImages.forEach((img, index) => {
+            const imgElement = document.createElement('img');
+            imgElement.classList.add('carousel-image');
+            if (index === 0) {
+                imgElement.classList.add('active');
+                imgElement.classList.add('initial-fade'); // Add fade-in animation for first image
+            }
+            imgElement.src = img.src;
+            imgElement.alt = img.alt;
+            carouselContainer.appendChild(imgElement);
+        });
+
+        // Initialize carousel
+        const carouselImages = document.querySelectorAll('.carousel-image');
+        const indicatorsContainer = document.getElementById('carousel-indicators');
+        let currentIndex = 0;
+        let autoPlayInterval;
+
+        // Create indicators
+        carouselImages.forEach((img, index) => {
+            const indicator = document.createElement('button');
+            indicator.classList.add('carousel-indicator');
+            if (index === 0) indicator.classList.add('active');
+            indicator.setAttribute('aria-label', `Go to image ${index + 1}`);
+            indicator.addEventListener('click', () => goToSlide(index));
+            indicatorsContainer.appendChild(indicator);
+        });
+
+        const indicators = document.querySelectorAll('.carousel-indicator');
+
+        // Hide indicators when there's only one image
+        if (selectedImages.length <= 1) {
+            indicatorsContainer.style.display = 'none';
+        }
+
+        function goToSlide(index) {
+            // Remove active class from current image and indicator
+            carouselImages[currentIndex].classList.remove('active');
+            indicators[currentIndex].classList.remove('active');
+
+            // Add active class to new image and indicator
+            currentIndex = index;
+            carouselImages[currentIndex].classList.add('active');
+            indicators[currentIndex].classList.add('active');
+
+            // Reset auto-play
+            resetAutoPlay();
+        }
+
+        function nextSlide() {
+            const nextIndex = (currentIndex + 1) % carouselImages.length;
+            goToSlide(nextIndex);
+        }
+
+        function prevSlide() {
+            const prevIndex = (currentIndex - 1 + carouselImages.length) % carouselImages.length;
+            goToSlide(prevIndex);
+        }
+
+        function startAutoPlay() {
+            autoPlayInterval = setInterval(nextSlide, 15000); // Change image every 15 seconds (super slow)
+        }
+
+        function resetAutoPlay() {
+            clearInterval(autoPlayInterval);
+            startAutoPlay();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'ArrowRight') nextSlide();
+        });
+
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        const carousel = document.getElementById('homepage-carousel');
+        carousel.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        carousel.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) nextSlide(); // Swipe left
+            if (touchEndX > touchStartX + 50) prevSlide(); // Swipe right
+        }
+
+        // Start auto-play
+        startAutoPlay();
+
+        let search = window.location.href;
+        if(search.indexOf("/cart") > -1) {
+            $(".container").addClass("light-text");
+        }
+        $(".nested-category-tree-wrapper").hide();
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            const src = img.getAttribute('data-src');
+            if (src) {
+                img.setAttribute('src', src);
+                img.removeAttribute('data-src');
+            }
+        });
+        var l = window.location.href;
+        if(l.indexOf("commerce/orders/") > -1) {
+            $("#nav").hide();
+            $("#footer").hide();
+        }
+        var currentPath = window.location.pathname.toLowerCase();
+        if(currentPath.indexOf("shop") > -1 || currentPath.indexOf("commerce") > -1){
+            document.title = "Andrew Mitchell - Shop";
+
+            $(document).ready(function() {
+                $("a.nav-item.nav-link:contains('SHOP')").css("text-decoration", "underline");
+            });
+        }
+    });
+</script>
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            document.getElementById('nav').classList.add('fade-in');
+        }, 100); // Add a slight delay to ensure transition is visible
+        setTimeout(function() {
+            document.getElementById('footer').classList.add('fade-in');
+
+
+
+            $(".content-wrapper").css("background-color","#000000");
+        }, 100); //
+    });
+    $("body").addClass("dark-bg");
+
+</script>
