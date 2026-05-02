@@ -754,18 +754,18 @@ function generateCollectionIndex($collection) {
         }
 
         .grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 4px;
-        }
-
-        .grid.size-medium {
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 8px;
         }
 
-        .grid.size-large {
+        .grid.size-medium {
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 12px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 14px;
         }
 
         .grid-item {
@@ -931,11 +931,15 @@ function generateCollectionIndex($collection) {
             }
 
             .grid.size-small {
-                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+
+            .grid.size-medium {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
 
             .grid.size-large {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             }
 
             .controls {
@@ -3011,18 +3015,18 @@ function generateGridPage($collection) {
         }
 
         .grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 4px;
-        }
-
-        .grid.size-medium {
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 8px;
         }
 
-        .grid.size-large {
+        .grid.size-medium {
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 12px;
+        }
+
+        .grid.size-large {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 14px;
         }
 
         .grid-item {
@@ -3188,11 +3192,15 @@ function generateGridPage($collection) {
             }
 
             .grid.size-small {
-                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+
+            .grid.size-medium {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
 
             .grid.size-large {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             }
 
             .controls {
