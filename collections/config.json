@@ -354,5 +354,12 @@
   "rpc": {
     "ethereum": "https://mainnet.infura.io/v3/a638ad9468fb4ae0b7130373db4e66db",
     "arbitrum": "https://arb1.arbitrum.io/rpc"
+  },
+  "ipfs": {
+    "gateways": [
+      "https://gateway.pinata.cloud/ipfs/",
+      "https://ipfs.filebase.io/ipfs/"
+    ],
+    "htmlGateway": "https://ipfs.orbitor.dev/ipfs/"
   }
 }

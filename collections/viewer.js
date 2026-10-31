@@ -7,6 +7,7 @@
 // exposed to the browser via /collections/rpc-config.php (window.RPC_URLS) and
 // refreshed by loadConfig() below. No RPC URL is hardcoded here.
 let RPC_URLS = (typeof window !== 'undefined' && window.RPC_URLS) ? window.RPC_URLS : {};
+let IPFS_GATEWAYS = (typeof window !== 'undefined' && window.IPFS_GATEWAYS) ? window.IPFS_GATEWAYS : [];
 
 const ERC721_ABI = [
     'function tokenURI(uint256 tokenId) view returns (string)',
@@ -51,7 +52,7 @@ async function fetchTokenMetadata(tokenURI) {
 
         // Handle IPFS
         if (uri.startsWith('ipfs://')) {
-            uri = uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+            uri = uri.replace('ipfs://', IPFS_GATEWAYS[0]);
         }
 
         // Handle Arweave with multiple gateway fallbacks
@@ -108,7 +109,7 @@ function getImageUrl(metadata) {
 
     // Handle IPFS
     if (imageUrl.startsWith('ipfs://')) {
-        imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+        imageUrl = imageUrl.replace('ipfs://', IPFS_GATEWAYS[0]);
     }
 
     // Handle Arweave
@@ -167,6 +168,9 @@ async function loadConfig() {
     const config = await response.json();
     if (config && config.rpc) {
         RPC_URLS = config.rpc;
+    }
+    if (config && config.ipfs) {
+        IPFS_GATEWAYS = config.ipfs.gateways;
     }
     return config;
 }

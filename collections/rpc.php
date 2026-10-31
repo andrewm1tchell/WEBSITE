@@ -43,3 +43,40 @@ if (!function_exists('get_rpc_url')) {
         return isset($rpc[$chain]) ? $rpc[$chain] : null;
     }
 }
+
+if (!function_exists('get_ipfs_config')) {
+    /**
+     * Return the "ipfs" section of config.json: "gateways" for JSON and images
+     * (in fallback order) and "htmlGateway" for interactive pieces.
+     *
+     * @return array<string,mixed>
+     */
+    function get_ipfs_config()
+    {
+        static $ipfs = null;
+        if ($ipfs === null) {
+            $ipfs = [];
+            $path = __DIR__ . '/config.json';
+            if (is_readable($path)) {
+                $config = json_decode(file_get_contents($path), true);
+                if (is_array($config) && isset($config['ipfs']) && is_array($config['ipfs'])) {
+                    $ipfs = $config['ipfs'];
+                }
+            }
+        }
+        return $ipfs;
+    }
+}
+
+if (!function_exists('get_ipfs_gateway')) {
+    /**
+     * Return the primary IPFS gateway for server-side JSON and image fetches.
+     *
+     * @return string|null
+     */
+    function get_ipfs_gateway()
+    {
+        $ipfs = get_ipfs_config();
+        return isset($ipfs['gateways'][0]) ? $ipfs['gateways'][0] : null;
+    }
+}

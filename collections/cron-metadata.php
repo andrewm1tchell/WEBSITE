@@ -27,6 +27,8 @@ $cachePath = __DIR__ . '/cache';
 $thumbBaseDir = $baseDir . '/images/grid-thumbs';
 $configPath = __DIR__ . '/config.json';
 
+require_once __DIR__ . '/rpc.php';
+
 $config = json_decode(file_get_contents($configPath), true);
 if (!$config) {
     die("Error: Could not load config.json\n");
@@ -184,7 +186,7 @@ function fetchMetadataFromURI($uri) {
 
     $fetchUri = $uri;
     if (strpos($uri, 'ipfs://') === 0) {
-        $fetchUri = str_replace('ipfs://', 'https://ipfs.io/ipfs/', $uri);
+        $fetchUri = str_replace('ipfs://', get_ipfs_gateway(), $uri);
     }
     if (strpos($uri, 'ar://') === 0) {
         $fetchUri = str_replace('ar://', 'https://arweave.net/', $uri);
@@ -208,7 +210,7 @@ function fetchMetadataFromURI($uri) {
 function resolveImageUrl($url) {
     if (!$url) return null;
     if (strpos($url, 'ipfs://') === 0) {
-        return str_replace('ipfs://', 'https://ipfs.io/ipfs/', $url);
+        return str_replace('ipfs://', get_ipfs_gateway(), $url);
     }
     if (strpos($url, 'ar://') === 0) {
         return str_replace('ar://', 'https://arweave.net/', $url);

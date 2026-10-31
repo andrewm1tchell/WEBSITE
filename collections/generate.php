@@ -2174,6 +2174,12 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
 
         const RPC_URLS = window.RPC_URLS || {};
 
+        // IPFS gateways come from collections/config.json via rpc-config.php. HTML art
+        // gets its own gateway: Pinata refuses HTML and Filebase's CSP blocks inline scripts.
+        const IPFS_GATEWAYS = window.IPFS_GATEWAYS || [];
+        const IPFS_HTML_GATEWAY = window.IPFS_HTML_GATEWAY;
+        let ipfsGateway = IPFS_GATEWAYS[0];
+
         const ERC721_ABI = [
             'function tokenURI(uint256 tokenId) view returns (string)',
             'function ownerOf(uint256 tokenId) view returns (address)'
@@ -2190,7 +2196,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
         function getImageUrl(url) {
             if (!url) return null;
             if (url.startsWith('ipfs://')) {
-                return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
+                return url.replace('ipfs://', ipfsGateway);
             }
             if (url.startsWith('ar://')) {
                 return url.replace('ar://', 'https://arweave.net/');
@@ -2230,7 +2236,8 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
 
             let fetchUri = uri;
             if (uri.startsWith('ipfs://')) {
-                fetchUri = uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+                ipfsGateway = IPFS_GATEWAYS[retryCount] || ipfsGateway;
+                fetchUri = uri.replace('ipfs://', ipfsGateway);
             }
             if (uri.startsWith('ar://')) {
                 fetchUri = uri.replace('ar://', 'https://arweave.net/');
@@ -2254,8 +2261,8 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             } catch (e) {
                 console.log('Fetch failed:', e.message);
 
-                // Retry once if failed
-                if (retryCount < 1) {
+                // Retry once if failed, then on any remaining IPFS gateways
+                if (retryCount < Math.max(1, IPFS_GATEWAYS.length - 1)) {
                     console.log('Retrying...');
                     await new Promise(r => setTimeout(r, 1000));
                     return fetchMetadata(uri, retryCount + 1);
@@ -2277,6 +2284,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
         }
 
         function createIframe(url) {
+            url = url.replace(ipfsGateway, IPFS_HTML_GATEWAY);
             // Create iframe with all necessary permissions for generative art
             const permissions = [
                 'accelerometer',

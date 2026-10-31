@@ -110,7 +110,7 @@ function fetchMetadataFromURI($uri) {
 
     // Convert IPFS
     if (strpos($uri, 'ipfs://') === 0) {
-        $uri = str_replace('ipfs://', 'https://ipfs.io/ipfs/', $uri);
+        $uri = str_replace('ipfs://', get_ipfs_gateway(), $uri);
     }
     // Convert Arweave
     if (strpos($uri, 'ar://') === 0) {

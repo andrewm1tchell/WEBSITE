@@ -434,6 +434,12 @@
 
         const RPC_URLS = window.RPC_URLS || {};
 
+        // IPFS gateways come from collections/config.json via rpc-config.php. HTML art
+        // gets its own gateway: Pinata refuses HTML and Filebase's CSP blocks inline scripts.
+        const IPFS_GATEWAYS = window.IPFS_GATEWAYS || [];
+        const IPFS_HTML_GATEWAY = window.IPFS_HTML_GATEWAY;
+        let ipfsGateway = IPFS_GATEWAYS[0];
+
         const ERC721_ABI = [
             'function tokenURI(uint256 tokenId) view returns (string)',
             'function ownerOf(uint256 tokenId) view returns (address)'
@@ -446,7 +452,7 @@
         function getImageUrl(url) {
             if (!url) return null;
             if (url.startsWith('ipfs://')) {
-                return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
+                return url.replace('ipfs://', ipfsGateway);
             }
             if (url.startsWith('ar://')) {
                 return url.replace('ar://', 'https://arweave.net/');
@@ -486,7 +492,7 @@
 
             let fetchUri = uri;
             if (uri.startsWith('ipfs://')) {
-                fetchUri = uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+                fetchUri = uri.replace('ipfs://', ipfsGateway);
             }
             if (uri.startsWith('ar://')) {
                 fetchUri = uri.replace('ar://', 'https://arweave.net/');
@@ -563,7 +569,7 @@
                     }
 
                     if (hasAnimation) {
-                        artworkContainer.innerHTML = '<iframe src="' + animationUrl + '" allowfullscreen></iframe>';
+                        artworkContainer.innerHTML = '<iframe src="' + animationUrl.replace(ipfsGateway, IPFS_HTML_GATEWAY) + '" allowfullscreen></iframe>';
                         // Show toggle if we have both
                         if (imageUrl) {
                             document.getElementById('viewToggle').classList.remove('hidden');
@@ -646,12 +652,12 @@
                 }
 
                 if (showAnimationFirst) {
-                    artworkContainer.innerHTML = '<iframe src="' + animationUrl + '" allowfullscreen></iframe>';
+                    artworkContainer.innerHTML = '<iframe src="' + animationUrl.replace(ipfsGateway, IPFS_HTML_GATEWAY) + '" allowfullscreen></iframe>';
                 } else if (imageUrl) {
                     artworkContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + window.tokenAltText + '">';
                 } else if (animationUrl) {
                     // Fallback to animation if no image available
-                    artworkContainer.innerHTML = '<iframe src="' + animationUrl + '" allowfullscreen></iframe>';
+                    artworkContainer.innerHTML = '<iframe src="' + animationUrl.replace(ipfsGateway, IPFS_HTML_GATEWAY) + '" allowfullscreen></iframe>';
                 } else {
                     artworkContainer.innerHTML = '<div class="error">No artwork found</div>';
                 }
@@ -696,7 +702,7 @@
 
         function showAnimation() {
             if (!window.tokenAnimationUrl) return;
-            document.getElementById('artworkContainer').innerHTML = '<iframe src="' + window.tokenAnimationUrl + '" allowfullscreen></iframe>';
+            document.getElementById('artworkContainer').innerHTML = '<iframe src="' + window.tokenAnimationUrl.replace(ipfsGateway, IPFS_HTML_GATEWAY) + '" allowfullscreen></iframe>';
             document.getElementById('btnAnimation').classList.add('active');
             document.getElementById('btnImage').classList.remove('active');
         }
