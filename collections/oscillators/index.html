@@ -145,7 +145,7 @@
         }
 
         .container.grid-mode {
-            max-width: 1400px;
+            max-width: 1800px;
         }
 
         h1 {
@@ -444,24 +444,24 @@
         /* Grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
             margin-bottom: 40px;
         }
 
         .grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 4px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
         }
 
         .grid.size-medium {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
         }
 
         .grid.size-large {
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px;
         }
 
         .grid-item {
@@ -622,16 +622,20 @@
             }
 
             .grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 4px;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 6px;
             }
 
             .grid.size-small {
-                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+
+            .grid.size-medium {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
 
             .grid.size-large {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             }
 
             .controls {
@@ -713,6 +717,7 @@
             chain: 'tezos',
             supply: 350,
             thumbBase: '/images/grid-thumbs/oscillators/',
+            thumbExt: 'jpg',
             tokenIds: [1401603,1401604,1401605,1401606,1401607,1401608,1401609,1401610,1401611,1401612,1401613,1401614,1401615,1401616,1401617,1401618,1401619,1401620,1401621,1401622,1401623,1401624,1401625,1401626,1401627,1401628,1401629,1401630,1401631,1401632,1401633,1401634,1401635,1401636,1401637,1401638,1401639,1401640,1401641,1401642,1401643,1401644,1401645,1401646,1401647,1401648,1401649,1401650,1401651,1401652,1401653,1401654,1401655,1401656,1401657,1401658,1401659,1401660,1401661,1401662,1401663,1401664,1401665,1401666,1401667,1401668,1401669,1401670,1401671,1401672,1401673,1401674,1401675,1401676,1401677,1401678,1401679,1401680,1401681,1401682,1401683,1401684,1401685,1401686,1401687,1401688,1401689,1401690,1401691,1401692,1401693,1401694,1401695,1401696,1401697,1401698,1401699,1401700,1401701,1401702,1401703,1401704,1401705,1401706,1401707,1401708,1401709,1401710,1401711,1401712,1401713,1401714,1401715,1401716,1401717,1401718,1401719,1401720,1401721,1401722,1401723,1401724,1401725,1401726,1401727,1401728,1401729,1401730,1401731,1401732,1401733,1401734,1401735,1401736,1401737,1401738,1401739,1401740,1401741,1401742,1401743,1401744,1401745,1401746,1401747,1401748,1401749,1401750,1401751,1401752,1401753,1401754,1401755,1401756,1401757,1401758,1401759,1401760,1401761,1401762,1401763,1401764,1401765,1401766,1401767,1401768,1401769,1401770,1401771,1401772,1401773,1401774,1401775,1401776,1401777,1401778,1401779,1401780,1401781,1401782,1401783,1401784,1401785,1401786,1401787,1401788,1401789,1401790,1401791,1401792,1401793,1401794,1401795,1401796,1401797,1401798,1401799,1401800,1401801,1401802,1401803,1401804,1401805,1401806,1401807,1401808,1401809,1401810,1401811,1401812,1401813,1401814,1401815,1401816,1401817,1401818,1401819,1401820,1401821,1401822,1401823,1401824,1401825,1401826,1401827,1401828,1401829,1401830,1401831,1401832,1401833,1401835,1401836,1401837,1401838,1401839,1401840,1401841,1401842,1401843,1401844,1401845,1401846,1401847,1401848,1401849,1401850,1401851,1401852,1401853,1401854,1401855,1401856,1401857,1401858,1401859,1401860,1401861,1401862,1401863,1401864,1401865,1401866,1401867,1401868,1401869,1401870,1401871,1401875,1401876,1401878,1401881,1401882,1401883,1401885,1401886,1401888,1401889,1401890,1401893,1401894,1401895,1401896,1401897,1401898,1401899,1401900,1401901,1401902,1401903,1401904,1401905,1401906,1401908,1401909,1401910,1401912,1401913,1401915,1401917,1401918,1401919,1401920,1401921,1401922,1401924,1401926,1401927,1401928,1401929,1401930,1401931,1401932,1401933,1401934,1401935,1401936,1401937,1401938,1401939,1401940,1401941,1401943,1401945,1401946,1401947,1401950,1401951,1401953,1401956,1401957,1401959,1401960,1401962,1401964,1401965,1401966,1401971,1401972,1401974,1401976,1401977,1401980,1401982,1401983,1401984,1401985,1401986,1401987,1401988],
             tokenIdStart: 0,
             enableTraits: false
@@ -721,6 +726,7 @@
         const HAS_GRID = true;
         const MARKETPLACE_NAME = 'Objkt';
         const WALLET_CACHE_KEY = 'connectedWallet';
+        const IS_UNTITLED = COLLECTION.id === 'untitled_2024_2026';
 
         let allTokens = [];
         let traitIndex = {};
@@ -730,17 +736,23 @@
         let gridBuilt = false;
         let myTokensOnly = false;
         let ownedTokens = [];
+        const VISIBLE_TOKEN_IDS = Array.isArray(COLLECTION.tokenIds) && COLLECTION.tokenIds.length > 0
+            ? COLLECTION.tokenIds
+            : Array.from({ length: COLLECTION.supply }, (_, idx) =>
+                COLLECTION.tokenIdStart ? (COLLECTION.tokenIdStart + idx) : (idx + 1)
+            );
 
         // Build list view
         function buildListView() {
             const tokenList = document.getElementById('tokenList');
             let html = '';
-            for (let i = 1; i <= COLLECTION.supply; i++) {
-                html += '<li id="token-' + i + '" onclick="goToToken(' + i + ')">' +
-                    '<span class="token-num">#' + i + '</span>' +
+            VISIBLE_TOKEN_IDS.forEach((tokenId, idx) => {
+                const displayNum = idx + 1;
+                html += '<li id="token-' + displayNum + '" onclick="goToToken(' + displayNum + ')">' +
+                    '<span class="token-num">#' + tokenId + '</span>' +
                     '<span class="owner">—</span>' +
                     '</li>';
-            }
+            });
             tokenList.innerHTML = html;
             // Load owners after building list
             loadOwners();
@@ -775,13 +787,14 @@
             if (gridBuilt) return;
             const grid = document.getElementById('grid');
             let html = '';
-            for (let i = 1; i <= COLLECTION.supply; i++) {
-                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
-                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
-                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
-                    '<div class="number">#' + i + '</div>' +
+            VISIBLE_TOKEN_IDS.forEach((tokenId, idx) => {
+                const displayNum = idx + 1;
+                const thumbUrl = COLLECTION.thumbBase + tokenId + '.' + (COLLECTION.thumbExt || 'jpg');
+                html += '<div class="grid-item" data-display-num="' + displayNum + '" onclick="goToToken(' + displayNum + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + tokenId + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + tokenId + '</div>' +
                     '</div>';
-            }
+            });
             grid.innerHTML = html;
             gridBuilt = true;
         }
@@ -911,9 +924,10 @@
             var params = new URLSearchParams(window.location.search);
             var mode = params.get('mode');
             if (!mode) return url;
-            var newUrl = new URL(url, window.location.origin);
+            // Resolve relative links (e.g. "2.html") against current page path.
+            var newUrl = new URL(url, window.location.href);
             newUrl.searchParams.set('mode', mode);
-            return newUrl.pathname + newUrl.search;
+            return (url.startsWith('/') ? newUrl.pathname : (newUrl.pathname.split('/').pop() || url)) + newUrl.search;
         }
 
         function goToToken(displayNum) {
@@ -1069,6 +1083,9 @@
         }
 
         function setGridSize(size) {
+            if (IS_UNTITLED && size === 'large') {
+                size = 'medium';
+            }
             const grid = document.getElementById('grid');
             if (!grid) return;
             grid.classList.remove('size-small', 'size-medium', 'size-large');
@@ -1086,12 +1103,17 @@
             if (saved) {
                 setGridSize(saved);
             } else {
-                setGridSize('large');
+                setGridSize(IS_UNTITLED ? 'small' : 'large');
             }
         }
 
         // Initialize
         (function init() {
+            if (IS_UNTITLED) {
+                const sizeLargeBtn = document.getElementById('sizeLarge');
+                if (sizeLargeBtn) sizeLargeBtn.style.display = 'none';
+            }
+
             // Restore wallet address
             const savedWallet = localStorage.getItem(WALLET_CACHE_KEY);
             if (savedWallet) {

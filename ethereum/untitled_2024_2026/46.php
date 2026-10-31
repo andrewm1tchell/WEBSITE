@@ -19,6 +19,6 @@ img{max-width:100vw;max-height:100vh;object-fit:contain}
 </style>
 </head>
 <body>
-<img src="https://andrewmitchell-art.xyz/ethereum/untitled_2024_2026/April_5_2025_4-00_PM.png" alt="46"/>
+<img src="https://andrewmitchell-art.xyz/ethereum/untitled_2024_2026/April_5_2025_4-00_PM_2.png" alt="46"/>
 </body>
 </html>

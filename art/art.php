@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php include 'meta.php'; ?>
+<script>
+  // Disable JINSEI background texture on art.php
+  window.JINSEI_BG = { dark: '#0a0108', light: '#ffffff', seed: null, grain: 0, texA: false, texB: false, stains: false };
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script>
     document.title = "Andrew Mitchell - Art";
@@ -75,16 +79,43 @@
         transition: transform 0.2s ease;
     }
 
-    /* Use light text on the blue blobs */
-    .blob-label .title,
-    .blob-label .year,
-    .blob-label .collab,
-    .blob-label .collab a {
+    /* The shapes invert against the page — off-white on the dark page, near-black
+       on the light one — so the label text sitting on top has to invert with
+       them. #canvas-container gets .on-dark from draw() whenever the mode flips.
+       The accent blob keeps its colour in both modes, so it always wants white. */
+    #canvas-container.on-dark .blob-label:not(.accent) .title,
+    #canvas-container.on-dark .blob-label:not(.accent) .year,
+    #canvas-container.on-dark .blob-label:not(.accent) .collab,
+    #canvas-container.on-dark .blob-label:not(.accent) .collab a,
+    #canvas-container.on-dark .blob-label:not(.accent) .click-hint {
+        color: #1e1a1c !important;
+    }
+
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .title,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .year,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .collab,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .collab a,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .click-hint {
+        color: #f4f2ef !important;
+    }
+
+    .blob-label.accent .title,
+    .blob-label.accent .year,
+    .blob-label.accent .collab,
+    .blob-label.accent .collab a,
+    .blob-label.accent .click-hint {
         color: var(--white) !important;
     }
 
+    /* The drop shadow is tuned for light text; on the off-white shapes it just
+       muddies the dark type. */
+    #canvas-container.on-dark .blob-label:not(.accent) .title {
+        text-shadow: none;
+    }
+
+    /* Hover used to lighten the text, which is invisible on a white shape.
+       The scale alone is enough feedback. */
     .blob-label:hover .title {
-        color: rgba(255, 255, 255, 0.9) !important;
         transform: scale(1.15);
     }
 
@@ -117,12 +148,10 @@
         left: 50%;
         transform: translateX(-50%);
         font-size: 0.5rem;
-        color: var(--white);
         opacity: 0;
         transition: opacity 0.3s ease;
         white-space: nowrap;
         pointer-events: none;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
 
     .new-badge {
@@ -135,6 +164,14 @@
         margin-left: 5px;
         vertical-align: middle;
         font-weight: 600;
+    }
+
+    .minting-badge {
+        background: #fff;
+        color: #111;
+        border: 1px solid #fff;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
     }
 
     .view-collections-btn {
@@ -188,7 +225,7 @@
 // Artwork data
 const artworks = [
     { title: "NOKORI", year: "2026", href: "art/nokori.php", isNew: true },
-    { title: "???", year: "", href: "art/untitled.php" },
+    { title: "Angels", year: "2026", href: "art/angels.php", minting: true },
     { title: "Popup", year: "2024", href: "art/popup.php" },
     { title: "Prozac Youth", year: "2024", href: "art/prozacyouth.php", collab: "Created with <a href='https://tjo.art/' target='_blank'>Tjo</a>" },
     { title: "Modulo", year: "2024", href: "art/modulo.php", collab: "with <a href='https://x.com/cafromthesky' target='_blank'>Rich Caldwell</a>" },
@@ -233,11 +270,56 @@ let pretextFontSize = 9;
 let pretextLineHeight = 13;
 let pretextColumns = []; // { left, right } for each column
 const pretextColumnGap = 14;
+let lastLabelMode = null; // tracks the mode the label colours are currently set for
 
-// Blob color — all blue, new items get a random non-blue hue
-const blobColor = { fill: 'hsl(220, 85%, 15%)', stroke: 'hsl(220, 85%, 25%)' };
-const newHue = [0, 25, 45, 145, 330][Math.floor(Math.random() * 5)];
-const blobColorNew = { fill: `hsl(${newHue}, 85%, 32%)`, stroke: `hsl(${newHue}, 85%, 44%)` };
+// Blob colour — taken from the background config so the two stay in sync.
+// The shapes are the *other* mode's base tone: off-white on the dark page,
+// near-black on the light one. They read as cut-outs from the same paper rather
+// than as coloured objects sitting on top of it. Only the newest work is
+// coloured, on the texture's own hue, so it is the single accent on the page.
+const BG_CFG = window.JINSEI_BG || {};
+const BLOB_DARK_TONE = '#000000';
+const BLOB_LIGHT_TONE = '#ffffff';
+const BLOB_ACCENT_HUE = BG_CFG.texBHue === undefined ? 335 : BG_CFG.texBHue;
+
+// Slight transparency so the page's weave reads through the shapes. The stroke
+// stays fully opaque so the edges stay crisp — a translucent fill with a solid
+// rim looks deliberate, whereas fading both just looks washed out.
+let BLOB_FILL_ALPHA = 0.2;
+let BLOB_STROKE_ALPHA = 1;
+
+// p5's colour parser wants integer channels in rgba(), so round on the way in.
+function withAlpha(hex, alpha) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Read the DOM, not isDarkMode: setLightMode(true) applies the *light* palette
+// while setting that flag true, so the flag reads backwards.
+function pageIsDark() {
+    const b = document.body;
+    if (b.classList.contains('light-bg')) return false;
+    if (b.classList.contains('dark-bg')) return true;
+    const m = (getComputedStyle(b).backgroundColor || '').match(/\d+/g);
+    return m ? (0.2126 * +m[0] + 0.7152 * +m[1] + 0.0722 * +m[2]) < 128 : true;
+}
+
+// Resolved per frame so the shapes flip when the dark/light toggle is hit.
+function blobPalette(isNew, isDark) {
+    if (isNew) {
+        // New artworks use grayscale instead of colored
+        return isDark
+            ? { fill: withAlpha('#e0e0e0', BLOB_FILL_ALPHA), stroke: withAlpha('#ffffff', BLOB_STROKE_ALPHA) }
+            : { fill: withAlpha('#333333', BLOB_FILL_ALPHA), stroke: withAlpha('#000000', BLOB_STROKE_ALPHA) };
+    }
+    return isDark
+        ? { fill: withAlpha(BLOB_LIGHT_TONE, BLOB_FILL_ALPHA), stroke: withAlpha('#ffffff', BLOB_STROKE_ALPHA) }
+        : { fill: withAlpha(BLOB_DARK_TONE,  BLOB_FILL_ALPHA), stroke: withAlpha('#000000', BLOB_STROKE_ALPHA) };
+}
 
 // Function to update ground position based on footer
 function updateGroundPosition() {
@@ -344,11 +426,10 @@ function setup() {
         });
 
         World.add(world, body);
-        var color = artwork.isNew ? blobColorNew : blobColor;
+
         blobs.push({
             body: body,
             radius: radius,
-            color: color,
             artwork: artwork,
             shape: shape
         });
@@ -366,7 +447,9 @@ function setup() {
 
 function createLabel(artwork, index, radius, shape) {
     const label = document.createElement('a');
-    label.className = 'blob-label';
+    // .accent opts out of the invert-with-the-page text rules: that shape stays
+    // coloured in both modes, so its label always wants white text.
+    label.className = artwork.isNew ? 'blob-label accent' : 'blob-label';
     label.id = `label-${index}`;
     label.href = artwork.href;
     label.title = 'Double-click to open';
@@ -390,6 +473,9 @@ function createLabel(artwork, index, radius, shape) {
     }
 
     let titleHtml = artwork.title;
+    if (artwork.minting) {
+        titleHtml += ' <span class="new-badge minting-badge">MINTING</span>';
+    }
     label.innerHTML = `
         <div class="year">${artwork.year}</div>
         <div class="title">${titleHtml}</div>
@@ -577,18 +663,28 @@ function draw() {
     }
 
     // Draw and update blobs
+    const isDark = pageIsDark();
+
+    // Flip the label text colours with the shapes, but only when the mode
+    // actually changes — this runs every frame.
+    if (isDark !== lastLabelMode) {
+        lastLabelMode = isDark;
+        document.getElementById('canvas-container').classList.toggle('on-dark', isDark);
+    }
+
     blobs.forEach((blob, index) => {
         const pos = blob.body.position;
         const angle = blob.body.angle;
+        const palette = blobPalette(blob.artwork.isNew, isDark);
 
         push();
         translate(pos.x, pos.y);
         rotate(angle);
 
         // Minimal stroke for clean edges
-        stroke(blob.color.stroke);
+        stroke(color(palette.stroke));
         strokeWeight(2);
-        fill(blob.color.fill);
+        fill("#FFF");
 
         if (blob.shape === 'hexagon') {
             const r = blob.radius;

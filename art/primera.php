@@ -11,6 +11,29 @@
        document.title = "Andrew Mitchell - Primera";
 
    </script>
+       <style>
+        .preview-grid {
+          display: grid;
+          grid-template-columns: repeat(8, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
+          display:none;
+        }
+        .preview-grid img {
+          display: block;
+          width: 100%;
+          height: auto;
+          border: 1px solid currentColor;
+        }
+        @media (max-width: 768px) {
+          .preview-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        .art-gallery{
+                      grid-template-columns: repeat(8, minmax(0, 1fr));
+        }
+       </style>
 </head>
 <body>
  <div class="art-page">
@@ -23,8 +46,7 @@
       </a>
     </div>
 
-    <div class="slideshow" id="slideshow"></div>
-    <div class="slideshow-dots" id="slideshowDots"></div>
+    <div class="preview-grid" id="slideshow"></div>
 
     <p class="description light-text">
       Primera is the genesis project from <a target="_blank" href="https://x.com/Mystudios_io">Mitchell and Yun Studios</a> (founded by me and <a href="https://ribbonriven.com" target="_blank">Grant Yun</a>) created with JavaScript and <a href="https://p5js.org/" target="_blank">p5.js</a>, and minted on Ethereum. Capped at 400 individual pieces generated upon mint, it has been a project years in the making. It is a study and interpretation of the fundamentals of early 20th-century art utilizing 21st-century blockchain technology. Each piece is unique and uses its own individual seed value, generated at the time of creation.
@@ -56,52 +78,17 @@
       imageUrls.push('/images/collections/primera/' + i + '.png');
     }
 
-    // Shuffle and pick a subset for the hero carousel
+    // Shuffle and pick a subset for the preview grid
     var shuffled = imageUrls.slice().sort(function() { return 0.5 - Math.random(); });
     var slides = shuffled.slice(0, 6);
-    var currentSlide = 0;
 
     var slideshow = document.getElementById('slideshow');
-    var dotsContainer = document.getElementById('slideshowDots');
-    var dots = [];
 
     slides.forEach(function(url, i) {
       var img = document.createElement('img');
       img.src = url;
       img.alt = 'Primera ' + i;
-      if (i === 0) img.className = 'active';
       slideshow.appendChild(img);
-
-      var dot = document.createElement('button');
-      dot.className = 'slideshow-dot light-text' + (i === 0 ? ' active' : '');
-      dot.setAttribute('aria-label', 'Go to image ' + (i + 1));
-      dot.addEventListener('click', function() { goToSlide(i); });
-      dotsContainer.appendChild(dot);
-      dots.push(dot);
-    });
-
-    function goToSlide(n) {
-      var imgs = slideshow.querySelectorAll('img');
-      imgs[currentSlide].classList.remove('active');
-      dots[currentSlide].classList.remove('active');
-      currentSlide = (n + imgs.length) % imgs.length;
-      imgs[currentSlide].classList.add('active');
-      dots[currentSlide].classList.add('active');
-      resetAutoPlay();
-    }
-
-    var autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-    function resetAutoPlay() {
-      clearInterval(autoPlay);
-      autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-    }
-
-    var touchStartX = 0;
-    slideshow.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
-    slideshow.addEventListener('touchend', function(e) {
-      var diff = e.changedTouches[0].screenX - touchStartX;
-      if (diff < -50) goToSlide(currentSlide + 1);
-      if (diff > 50) goToSlide(currentSlide - 1);
     });
 
     // Full gallery

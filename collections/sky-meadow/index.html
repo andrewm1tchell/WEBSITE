@@ -145,7 +145,7 @@
         }
 
         .container.grid-mode {
-            max-width: 1400px;
+            max-width: 1800px;
         }
 
         h1 {
@@ -444,24 +444,24 @@
         /* Grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
             margin-bottom: 40px;
         }
 
         .grid.size-small {
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 4px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
         }
 
         .grid.size-medium {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
         }
 
         .grid.size-large {
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px;
         }
 
         .grid-item {
@@ -622,16 +622,20 @@
             }
 
             .grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 4px;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 6px;
             }
 
             .grid.size-small {
-                grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+
+            .grid.size-medium {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
 
             .grid.size-large {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             }
 
             .controls {
@@ -713,6 +717,7 @@
             chain: 'ethereum',
             supply: 555,
             thumbBase: '/images/grid-thumbs/sky-meadow/',
+            thumbExt: 'jpg',
             tokenIds: null,
             tokenIdStart: 1,
             enableTraits: false
@@ -721,6 +726,7 @@
         const HAS_GRID = true;
         const MARKETPLACE_NAME = 'OpenSea';
         const WALLET_CACHE_KEY = 'connectedWallet';
+        const IS_UNTITLED = COLLECTION.id === 'untitled_2024_2026';
 
         let allTokens = [];
         let traitIndex = {};
@@ -730,17 +736,23 @@
         let gridBuilt = false;
         let myTokensOnly = false;
         let ownedTokens = [];
+        const VISIBLE_TOKEN_IDS = Array.isArray(COLLECTION.tokenIds) && COLLECTION.tokenIds.length > 0
+            ? COLLECTION.tokenIds
+            : Array.from({ length: COLLECTION.supply }, (_, idx) =>
+                COLLECTION.tokenIdStart ? (COLLECTION.tokenIdStart + idx) : (idx + 1)
+            );
 
         // Build list view
         function buildListView() {
             const tokenList = document.getElementById('tokenList');
             let html = '';
-            for (let i = 1; i <= COLLECTION.supply; i++) {
-                html += '<li id="token-' + i + '" onclick="goToToken(' + i + ')">' +
-                    '<span class="token-num">#' + i + '</span>' +
+            VISIBLE_TOKEN_IDS.forEach((tokenId, idx) => {
+                const displayNum = idx + 1;
+                html += '<li id="token-' + displayNum + '" onclick="goToToken(' + displayNum + ')">' +
+                    '<span class="token-num">#' + tokenId + '</span>' +
                     '<span class="owner">—</span>' +
                     '</li>';
-            }
+            });
             tokenList.innerHTML = html;
             // Load owners after building list
             loadOwners();
@@ -775,13 +787,14 @@
             if (gridBuilt) return;
             const grid = document.getElementById('grid');
             let html = '';
-            for (let i = 1; i <= COLLECTION.supply; i++) {
-                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
-                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
-                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
-                    '<div class="number">#' + i + '</div>' +
+            VISIBLE_TOKEN_IDS.forEach((tokenId, idx) => {
+                const displayNum = idx + 1;
+                const thumbUrl = COLLECTION.thumbBase + tokenId + '.' + (COLLECTION.thumbExt || 'jpg');
+                html += '<div class="grid-item" data-display-num="' + displayNum + '" onclick="goToToken(' + displayNum + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + tokenId + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + tokenId + '</div>' +
                     '</div>';
-            }
+            });
             grid.innerHTML = html;
             gridBuilt = true;
         }
@@ -911,9 +924,10 @@
             var params = new URLSearchParams(window.location.search);
             var mode = params.get('mode');
             if (!mode) return url;
-            var newUrl = new URL(url, window.location.origin);
+            // Resolve relative links (e.g. "2.html") against current page path.
+            var newUrl = new URL(url, window.location.href);
             newUrl.searchParams.set('mode', mode);
-            return newUrl.pathname + newUrl.search;
+            return (url.startsWith('/') ? newUrl.pathname : (newUrl.pathname.split('/').pop() || url)) + newUrl.search;
         }
 
         function goToToken(displayNum) {
@@ -1069,6 +1083,9 @@
         }
 
         function setGridSize(size) {
+            if (IS_UNTITLED && size === 'large') {
+                size = 'medium';
+            }
             const grid = document.getElementById('grid');
             if (!grid) return;
             grid.classList.remove('size-small', 'size-medium', 'size-large');
@@ -1086,12 +1103,17 @@
             if (saved) {
                 setGridSize(saved);
             } else {
-                setGridSize('large');
+                setGridSize(IS_UNTITLED ? 'small' : 'large');
             }
         }
 
         // Initialize
         (function init() {
+            if (IS_UNTITLED) {
+                const sizeLargeBtn = document.getElementById('sizeLarge');
+                if (sizeLargeBtn) sizeLargeBtn.style.display = 'none';
+            }
+
             // Restore wallet address
             const savedWallet = localStorage.getItem(WALLET_CACHE_KEY);
             if (savedWallet) {

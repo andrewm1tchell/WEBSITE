@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Angels</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    svg {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+  </style>
+</head>
+<body>
+<script>
+// This page renders the exact same on-chain sketch.js as the standard page,
+// then extends its seed widget with three things that only belong here:
+//   1. a "Save seed" button — the only place the wallet-write/save-seed
+//      mechanic lives.
+//   2. a persistent, scrollable "Saved seeds" list — who saved each seed and
+//      when, click a row to load it.
+//   3. when the page is opened for a specific token (?tokenId=), the true
+//      current seed is fetched from the live VesselRenderer on mainnet
+//      instead of trusting a client-supplied ?seed= param, which is
+//      spoofable — see the "On-chain token seed verification" section below.
+// sketch.js itself (embedded on-chain via ScriptStorage) stays read-only:
+// copy/view/browse only, no wallet-write code baked into the immutable
+// on-chain script.
+//
+// window.__seedControlsExtend is called by sketch.js's createSeedControls()
+// right after it builds the widget, so this closure can freely reference
+// sketch.js's top-level bindings (REGISTRY_ADDRESS, PUBLIC_RPC_URL, HASH,
+// IS_LIGHT, rpcCall, hexToBytes, readUintAt, bytesToHex, padHexWord,
+// fetchSavedSeedsTotal, fetchSavedSeedsPage, loadSeed, showCopyIndicator,
+// ...) — classic <script> tags in the same document share one top-level
+// scope, and by the time this hook actually runs (called from deep inside
+// sketch.js), those bindings already exist. Because verifying the on-chain
+// seed is async and HASH is computed synchronously the instant sketch.js
+// loads, sketch.js is no longer a static <script src> tag here — it's
+// injected only once verification (or the decision to skip it) is done; see
+// the bottom of this script.
+
+const MAINNET_CHAIN_ID_HEX = '0x1';
+const SAVE_SEED_FEE_WEI_HEX = '0x38d7ea4c68000'; // 0.001 ETH — must match the registry's saveFee
+const SAVE_SEED_GAS_HEX = '0x3d090'; // 250,000 gas, ~2x measured cost for a 66-byte seed
+
+async function walletRequest(method, params) {
+  if (!window.ethereum) throw new Error('No wallet found');
+  return window.ethereum.request({ method, params });
+}
+
+async function connectWallet() {
+  const accounts = await walletRequest('eth_requestAccounts', []);
+  return accounts[0];
+}
+
+async function ensureMainnet() {
+  const chainId = await walletRequest('eth_chainId', []);
+  if (chainId === MAINNET_CHAIN_ID_HEX) return;
+  // Every wallet already knows mainnet, so a plain switch (no
+  // wallet_addEthereumChain fallback) is enough — unlike Sepolia, there's no
+  // "chain not added yet" case to handle here.
+  await walletRequest('wallet_switchEthereumChain', [{ chainId: MAINNET_CHAIN_ID_HEX }]);
+}
+
+// sketch.js only kept the read-side ABI helpers (bytesToHex/padHexWord are
+// still there, reused below) — the write-side encoder was removed from the
+// on-chain script along with the rest of the wallet-write path, so it's
+// re-added here instead, in the one place that still needs it.
+function encodeStringParam(str) {
+  const strBytes = new TextEncoder().encode(str);
+  const padded = new Uint8Array(Math.ceil(strBytes.length / 32) * 32 || 32);
+  padded.set(strBytes);
+  return padHexWord(strBytes.length.toString(16)) + bytesToHex(padded);
+}
+
+function encodeSaveSeedCalldata(seed) {
+  return '0x' + 'b1914536' + padHexWord('20') + encodeStringParam(seed);
+}
+
+async function saveSeedOnChain(seed) {
+  const account = await connectWallet();
+  await ensureMainnet();
+  return walletRequest('eth_sendTransaction', [
+    {
+      from: account,
+      to: REGISTRY_ADDRESS,
+      data: encodeSaveSeedCalldata(seed),
+      value: SAVE_SEED_FEE_WEI_HEX,
+      gas: SAVE_SEED_GAS_HEX
+    }
+  ]);
+}
+
+// --- On-chain token seed verification ---------------------------------------
+// The animation reseeds every 60 seconds, derived on-chain from
+// VesselRenderer.getMinuteSeed(tokenId) — the live renderer for THE_VESSEL
+// "Angels" sequence, on mainnet like the SeedRegistry used for
+// saving/browsing seeds above. When this page is opened for a specific token
+// (?tokenId=), that seed is fetched directly instead of
+// trusting a client-supplied ?seed= param — which is just a URL anyone can
+// edit — so what's shown (and what "Save seed" saves) is provably the real
+// current seed for that token, not a spoofed one. This runs *before*
+// sketch.js is loaded (see the bootstrap at the bottom of this script) since
+// sketch.js computes its HASH constant synchronously the moment it loads,
+// and this lookup is an async RPC round trip.
+const MAINNET_RPC_URL = 'https://ethereum-rpc.publicnode.com';
+const VESSEL_RENDERER_ADDRESS = '0x1b64cf0d027f22d3ad76de00ea2fdc0ae7e53e8e';
+
+async function mainnetRpcCall(method, params) {
+  const response = await fetch(MAINNET_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+  });
+  const body = await response.json();
+  if (body.error) throw new Error(body.error.message || 'RPC error');
+  return body.result;
+}
+
+function encodeGetMinuteSeedCalldata(tokenId) {
+  return '0x8000cf70' + BigInt(tokenId).toString(16).padStart(64, '0');
+}
+
+// Faithful copy of the inline hashFromSeed() that AnimationRenderer.sol
+// embeds in every token's on-chain animation_url HTML — same nibble-mixing
+// formula, so a chain-verified seed here produces exactly the hash the real
+// on-chain render would use. Only the low 32 bits of the seed are used
+// on-chain too (see AnimationRenderer.sol's comment on why: JS numbers only
+// have 53 bits of integer precision, nowhere near enough for a full
+// keccak256-derived uint256).
+function hashFromSeed(seed) {
+  let out = '';
+  for (let i = 0; i < 64; i++) {
+    const v = (Math.imul((seed + i + 1) >>> 0, 2654435761) ^ (seed << ((i % 5) + 1)) ^ (i * 131)) >>> 0;
+    out += (v & 15).toString(16);
+  }
+  return '0x' + out.slice(0, 64);
+}
+
+async function fetchVerifiedHash(tokenId) {
+  const resultHex = await mainnetRpcCall('eth_call', [
+    { to: VESSEL_RENDERER_ADDRESS, data: encodeGetMinuteSeedCalldata(tokenId) }, 'latest'
+  ]);
+  const low32 = Number(BigInt(resultHex) & 0xffffffffn);
+  return hashFromSeed(low32 || 1); // matches JS: Number(VESSEL_SEED) || 1
+}
+
+// Set once verification succeeds; __seedControlsExtend below reads it to
+// show a "verified" badge instead of silently trusting the render.
+let verifiedTokenId = null;
+// That badge's element, once __seedControlsExtend has built it — kept here so
+// a manual reseed can take it down again (see installInPlaceReseed below).
+let verifiedBadge = null;
+
+function showBootMessage(text) {
+  const el = document.createElement('div');
+  el.textContent = text;
+  el.style.position = 'fixed';
+  el.style.top = '14px';
+  el.style.left = '14px';
+  el.style.zIndex = '9999';
+  el.style.padding = '8px 12px';
+  el.style.borderRadius = '6px';
+  el.style.background = 'rgba(20,20,20,0.9)';
+  el.style.color = '#f66';
+  el.style.fontFamily = 'system-ui, sans-serif';
+  el.style.fontSize = '12px';
+  el.style.maxWidth = '360px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+
+// sketch.js is fetched live from ScriptStorage on mainnet rather than from a
+// static file on this server. A static copy has to be manually kept in sync
+// with whatever's actually live on-chain (via replaceScript()) — miss that
+// step even once and this page silently runs stale code, which is exactly
+// what happened before this was added. Fetching directly from ScriptStorage
+// makes that class of bug structurally impossible: this page always runs
+// whatever the chain says is current, with no second copy to drift.
+const SCRIPT_STORAGE_ADDRESS = '0x3e39962390ac7721c4593abe52806bf98e9e4ab0';
+
+// Minimal, self-contained ABI string decoder — sketch.js's own hex helpers
+// (bytesToHex, readUintAt, ...) aren't available yet at this point, since
+// fetching sketch.js's source is the very thing this function is doing.
+function decodeAbiString(hex) {
+  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+  const length = parseInt(clean.slice(64, 128), 16);
+  const dataHex = clean.slice(128, 128 + length * 2);
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < length; i++) {
+    bytes[i] = parseInt(dataHex.substr(i * 2, 2), 16);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+async function loadSketchScript() {
+  try {
+    const resultHex = await mainnetRpcCall('eth_call', [
+      { to: SCRIPT_STORAGE_ADDRESS, data: '0x620b7303' }, 'latest' // getScript()
+    ]);
+    const script = document.createElement('script');
+    script.textContent = decodeAbiString(resultHex);
+    document.body.appendChild(script);
+  } catch (e) {
+    console.error('Failed to fetch on-chain script from ScriptStorage, falling back to local copy', e);
+    // Unlike an inline script (which runs during appendChild), a src script
+    // loads asynchronously — so wait for it, otherwise callers resume before
+    // any of sketch.js's bindings exist.
+    await new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'sketch.js';
+      script.onload = resolve;
+      script.onerror = resolve;
+      document.body.appendChild(script);
+    });
+  }
+}
+
+// --- In-place reseed --------------------------------------------------------
+// sketch.js's loadSeed() only reseeds in place when it's running from a data:
+// URI — the NFT's own animation_url, which is why typing a seed and hitting
+// "View" works on the token page. Anywhere else it navigates to ?seed=… and
+// lets the reload re-derive everything from scratch. That path is a dead end
+// on this page: the bootstrap below deliberately strips ?seed= once the
+// token's real seed has been verified on-chain, so the reload lands right
+// back on the verified seed and "View" looks like it does nothing.
+//
+// So re-point loadSeed at the same in-place path the on-chain page takes.
+// Everything it needs (HASH, deriveState, regenerate, ...) is a top-level
+// binding of sketch.js, shared with this script — see the note at the top of
+// this file. Overriding the global works because sketch.js's own call sites
+// (the View button, Enter in the seed field, dblclick, the saved-seed rows)
+// all resolve `loadSeed` through the global object at call time. Nothing else
+// about the document changes, so the wallet/save/list code below is unaffected.
+function installInPlaceReseed() {
+  // typeof, not a direct reference: if the script failed to load at all these
+  // identifiers are undeclared, and reading one would throw.
+  if (typeof deriveState !== 'function' || typeof regenerate !== 'function' ||
+      typeof armRefreshIndicator !== 'function' || typeof applyTheme !== 'function') {
+    // An older on-chain script that doesn't expose these — leave its own
+    // loadSeed alone rather than replacing it with something broken.
+    console.warn('On-chain script lacks the in-place reseed helpers; leaving loadSeed as-is');
+    return;
+  }
+  window.loadSeed = function (value) {
+    const seed = value.trim();
+    if (!seed) return;
+    HASH = seed;
+    deriveState(HASH);
+    regenerate();
+    armRefreshIndicator();
+    applyTheme();
+    const seedInputEl = document.getElementById('seed-input');
+    if (seedInputEl) seedInputEl.value = HASH;
+    // What's on screen is no longer the chain-verified seed, so stop claiming
+    // it is. (Saving still saves whatever HASH currently renders — the
+    // registry is a free-form seed vault, not a token attestation.)
+    if (verifiedBadge) {
+      verifiedBadge.remove();
+      verifiedBadge = null;
+    }
+  };
+}
+
+(async () => {
+  // Angels is permanently sequence/tokenId 10 on THE_VESSEL_sequences — it's
+  // a single shared ERC1155 edition, not a per-owner varying ID, so default
+  // to it directly rather than requiring a ?tokenId= URL param (which
+  // nothing currently supplies by default, including the NFT metadata's
+  // external_url). An explicit ?tokenId= still overrides, e.g. for testing
+  // against a different sequence.
+  const DEFAULT_TOKEN_ID = '10';
+  const tokenId = new URLSearchParams(location.search).get('tokenId') || DEFAULT_TOKEN_ID;
+  try {
+    window.__ANGEL_HASH__ = await fetchVerifiedHash(tokenId);
+    verifiedTokenId = tokenId;
+    // A verified seed is now authoritative — strip any ?seed= so it can't
+    // spoof the render or get saved as if it were this token's real seed.
+    const url = new URL(location.href);
+    if (url.searchParams.has('seed')) {
+      url.searchParams.delete('seed');
+      history.replaceState(null, '', url.toString());
+    }
+  } catch (e) {
+    console.error('Failed to verify on-chain seed for token', tokenId, e);
+    showBootMessage(`Could not verify on-chain seed for token #${tokenId} — showing unverified preview`);
+  }
+  await loadSketchScript();
+  installInPlaceReseed();
+})();
+
+// --- Saved-seed timestamps -------------------------------------------------
+// SeedRegistry.getSavedSeeds() returns a timestamp (block.timestamp at save
+// time) alongside each saver/seed, so "when" comes straight out of the same
+// eth_call already used to list entries — no event-log lookups needed. (An
+// earlier version of this reconstructed timestamps from SeedSaved event
+// logs, but the free public RPC only serves eth_getLogs for the last ~100
+// blocks without a paid archive token, so the registry was redeployed with
+// the timestamp stored directly instead.)
+function relativeTime(unixSeconds) {
+  const diff = Math.max(0, Date.now() / 1000 - unixSeconds);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  if (diff < 2592000) return Math.floor(diff / 86400) + 'd ago';
+  return new Date(unixSeconds * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// --- Persistent "Saved seeds" list -----------------------------------------
+function buildVaultList() {
+  // These follow IS_LIGHT, which a reseed can flip. Before the in-place
+  // reseed above, every reseed was a navigation, so capturing them once was
+  // safe — the reload rebuilt this panel from scratch. Now it survives the
+  // reseed, so they're recomputed on each theme change instead (`let`, so the
+  // closures below read the current value). Elements tagged data-themed pick
+  // up the new text color; error rows stay red and so aren't tagged.
+  let color, border, panelBg, rowHoverBg;
+  const readColors = () => {
+    color = IS_LIGHT ? '#000' : '#fff';
+    border = IS_LIGHT ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.18)';
+    panelBg = IS_LIGHT ? '#fff' : '#1a1a1a';
+    rowHoverBg = IS_LIGHT ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.14)';
+  };
+  const themed = (el) => {
+    el.dataset.themed = '1';
+    return el;
+  };
+  readColors();
+
+  const panel = document.createElement('div');
+  panel.style.position = 'fixed';
+  panel.style.top = '14px';
+  panel.style.right = '14px';
+  panel.style.zIndex = '9998';
+  panel.style.width = '250px';
+  panel.style.maxHeight = '70vh';
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+  panel.style.borderRadius = '6px';
+  panel.style.background = panelBg;
+  panel.style.border = `1px solid ${border}`;
+  panel.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)';
+  panel.style.overflow = 'hidden';
+
+  const stop = (e) => e.stopPropagation();
+  ['click', 'dblclick', 'mousedown', 'contextmenu'].forEach((type) => panel.addEventListener(type, stop));
+
+  const header = document.createElement('div');
+  header.textContent = 'Saved seeds';
+  header.style.padding = '8px 10px';
+  header.style.fontFamily = 'system-ui, sans-serif';
+  header.style.fontSize = '11px';
+  header.style.fontWeight = '600';
+  header.style.color = color;
+  header.style.opacity = '0.85';
+  header.style.borderBottom = `1px solid ${border}`;
+  header.style.flex = '0 0 auto';
+  themed(header);
+
+  const list = document.createElement('div');
+  list.style.flex = '1 1 auto';
+  list.style.minHeight = '0';
+  list.style.overflowY = 'auto';
+  list.style.padding = '6px';
+  list.style.display = 'flex';
+  list.style.flexDirection = 'column';
+  list.style.gap = '2px';
+
+  const setListMessage = (text, isError) => {
+    list.textContent = '';
+    const row = document.createElement('div');
+    row.textContent = text;
+    row.style.padding = '4px 6px';
+    row.style.fontFamily = 'system-ui, sans-serif';
+    row.style.fontSize = '11px';
+    row.style.color = isError ? '#f66' : color;
+    if (!isError) {
+      row.style.opacity = '0.6';
+      themed(row);
+    }
+    list.appendChild(row);
+  };
+
+  const renderRow = (entry) => {
+    const row = document.createElement('div');
+    row.style.padding = '4px 6px';
+    row.style.borderRadius = '4px';
+    row.style.cursor = 'pointer';
+    row.title = `Saved by ${entry.saver}\nSeed: ${entry.seed}`;
+
+    const seedLine = document.createElement('div');
+    seedLine.textContent = `${entry.seed.slice(0, 14)}…`;
+    seedLine.style.fontFamily = 'ui-monospace, monospace';
+    seedLine.style.fontSize = '10.5px';
+    seedLine.style.color = color;
+    seedLine.style.whiteSpace = 'nowrap';
+    seedLine.style.overflow = 'hidden';
+    seedLine.style.textOverflow = 'ellipsis';
+    themed(seedLine);
+
+    const metaLine = document.createElement('div');
+    metaLine.style.fontFamily = 'ui-monospace, monospace';
+    metaLine.style.fontSize = '9.5px';
+    metaLine.style.color = color;
+    metaLine.style.opacity = '0.6';
+    metaLine.textContent = `${entry.saver.slice(0, 6)}…${entry.saver.slice(-4)} · ${relativeTime(entry.timestamp)}`;
+    themed(metaLine);
+
+    row.appendChild(seedLine);
+    row.appendChild(metaLine);
+    row.addEventListener('mouseenter', () => { row.style.background = rowHoverBg; });
+    row.addEventListener('mouseleave', () => { row.style.background = 'transparent'; });
+    row.addEventListener('click', () => loadSeed(entry.seed));
+
+    return row;
+  };
+
+  const PAGE_SIZE = 25;
+  let oldestLoaded = 0; // entries [oldestLoaded, total) have been fetched so far
+  let loadMoreBtn = null;
+
+  const removeLoadMoreButton = () => {
+    if (loadMoreBtn) {
+      loadMoreBtn.remove();
+      loadMoreBtn = null;
+    }
+  };
+
+  const addLoadMoreButton = () => {
+    removeLoadMoreButton();
+    loadMoreBtn = document.createElement('div');
+    loadMoreBtn.textContent = 'Load more…';
+    loadMoreBtn.style.padding = '5px 6px';
+    loadMoreBtn.style.marginTop = '2px';
+    loadMoreBtn.style.borderRadius = '4px';
+    loadMoreBtn.style.cursor = 'pointer';
+    loadMoreBtn.style.fontFamily = 'system-ui, sans-serif';
+    loadMoreBtn.style.fontSize = '11px';
+    loadMoreBtn.style.color = color;
+    loadMoreBtn.style.opacity = '0.7';
+    loadMoreBtn.style.textAlign = 'center';
+    themed(loadMoreBtn);
+    loadMoreBtn.addEventListener('mouseenter', () => { loadMoreBtn.style.background = rowHoverBg; });
+    loadMoreBtn.addEventListener('mouseleave', () => { loadMoreBtn.style.background = 'transparent'; });
+    loadMoreBtn.addEventListener('click', () => loadPage(false));
+    list.appendChild(loadMoreBtn);
+  };
+
+  async function loadPage(isFirstLoad) {
+    try {
+      if (isFirstLoad) {
+        const total = await fetchSavedSeedsTotal();
+        list.textContent = '';
+        loadMoreBtn = null;
+        if (total === 0) {
+          setListMessage('No saved seeds yet', false);
+          return;
+        }
+        oldestLoaded = total;
+      } else if (loadMoreBtn) {
+        loadMoreBtn.textContent = 'Loading…';
+      }
+
+      const start = oldestLoaded > PAGE_SIZE ? oldestLoaded - PAGE_SIZE : 0;
+      const count = oldestLoaded - start;
+      const entries = await fetchSavedSeedsPage(start, count);
+      oldestLoaded = start;
+
+      removeLoadMoreButton();
+      for (const entry of entries.slice().reverse()) {
+        list.appendChild(renderRow(entry));
+      }
+      if (oldestLoaded > 0) addLoadMoreButton();
+    } catch (e) {
+      setListMessage('Failed to load', true);
+      console.error('Failed to fetch saved seeds', e);
+    }
+  }
+
+  onThemeChange(() => {
+    readColors();
+    panel.style.background = panelBg;
+    panel.style.border = `1px solid ${border}`;
+    header.style.borderBottom = `1px solid ${border}`;
+    panel.querySelectorAll('[data-themed="1"]').forEach((el) => { el.style.color = color; });
+  });
+
+  setListMessage('Loading…', false);
+  panel.appendChild(header);
+  panel.appendChild(list);
+  document.body.appendChild(panel);
+  loadPage(true);
+}
+
+window.__seedControlsExtend = function ({ row1, savedToggleBtn, buttonStyle }) {
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save seed (0.001 Ξ)';
+  buttonStyle(saveBtn);
+
+  saveBtn.addEventListener('click', async () => {
+    try {
+      showCopyIndicator('Confirm 0.001 ETH in wallet…', false);
+      await saveSeedOnChain(HASH);
+      showCopyIndicator('Seed submitted', false);
+    } catch (e) {
+      showCopyIndicator('Save failed', true);
+      console.error('Failed to save seed on-chain', e);
+    }
+  });
+
+  // Superseded by the persistent list panel below, which shows saver + when
+  // for every entry instead of just the seed behind a hover-to-reveal toggle.
+  row1.insertBefore(saveBtn, savedToggleBtn);
+  savedToggleBtn.remove();
+
+  if (verifiedTokenId !== null) {
+    const badge = document.createElement('div');
+    badge.textContent = `✓ token #${verifiedTokenId}`;
+    badge.title = 'Seed verified against VesselRenderer.getMinuteSeed on mainnet';
+    badge.style.fontFamily = 'system-ui, sans-serif';
+    badge.style.fontSize = '10px';
+    badge.style.color = IS_LIGHT ? '#000' : '#fff';
+    badge.style.opacity = '0.6';
+    badge.style.marginBottom = '4px';
+    row1.parentNode.insertBefore(badge, row1);
+    onThemeChange(() => { badge.style.color = IS_LIGHT ? '#000' : '#fff'; });
+    verifiedBadge = badge;
+  }
+
+  buildVaultList();
+};
+</script>
+</body>
+</html>

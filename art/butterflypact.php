@@ -9,6 +9,25 @@
            $("a.nav-item.nav-link:contains('ART')").css("text-decoration", "underline");
        });
    </script>
+     <style>
+      .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .preview-grid img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid currentColor;
+      }
+      @media (max-width: 768px) {
+        .preview-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+     </style>
 </head>
 <body>
   <div class="art-page">
@@ -21,8 +40,7 @@
       </a>
     </div>
 
-    <div class="slideshow" id="slideshow"></div>
-    <div class="slideshow-dots" id="slideshowDots"></div>
+    <div class="preview-grid" id="slideshow"></div>
 
     <p class="description light-text">
       95 unique pieces, created with Javascript and <a href="https://p5js.org/" target="_blank">p5.js</a>, and minted on Arbitrum, an Ethereum L2. Presented by <a href="https://www.prohibition.art" target="_blank">Prohibition</a> and deployed on <a href="https://www.artblocks.io/" target="_blank">Art Blocks Engine</a>.
@@ -46,54 +64,18 @@
       imageUrls.push("/images/collections/butterfly-pact/" + i + ".png");
     }
 
-    // Shuffle and pick a subset for the hero carousel
+    // Shuffle and pick a subset for the preview grid
     var shuffled = imageUrls.slice().sort(function() { return 0.5 - Math.random(); });
     var slides = shuffled.slice(0, 6);
-    var currentSlide = 0;
 
-    // Build hero carousel
+    // Build preview grid
     var slideshow = document.getElementById('slideshow');
-    var dotsContainer = document.getElementById('slideshowDots');
-    var dots = [];
 
     slides.forEach(function(url, i) {
       var img = document.createElement('img');
       img.src = url;
       img.alt = 'Butterfly Pact ' + i;
-      if (i === 0) img.className = 'active';
       slideshow.appendChild(img);
-
-      var dot = document.createElement('button');
-      dot.className = 'slideshow-dot light-text' + (i === 0 ? ' active' : '');
-      dot.setAttribute('aria-label', 'Go to image ' + (i + 1));
-      dot.addEventListener('click', function() { goToSlide(i); });
-      dotsContainer.appendChild(dot);
-      dots.push(dot);
-    });
-
-    function goToSlide(n) {
-      var imgs = slideshow.querySelectorAll('img');
-      imgs[currentSlide].classList.remove('active');
-      dots[currentSlide].classList.remove('active');
-      currentSlide = (n + imgs.length) % imgs.length;
-      imgs[currentSlide].classList.add('active');
-      dots[currentSlide].classList.add('active');
-      resetAutoPlay();
-    }
-
-    var autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-    function resetAutoPlay() {
-      clearInterval(autoPlay);
-      autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-    }
-
-    // Swipe support
-    var touchStartX = 0;
-    slideshow.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
-    slideshow.addEventListener('touchend', function(e) {
-      var diff = e.changedTouches[0].screenX - touchStartX;
-      if (diff < -50) goToSlide(currentSlide + 1);
-      if (diff > 50) goToSlide(currentSlide - 1);
     });
 
     // Full gallery

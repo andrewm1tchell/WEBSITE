@@ -1,22 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php include 'meta.php'; ?>
+<script>
+  // Remove JINSEI background texture on art.php
+  document.addEventListener('DOMContentLoaded', function() {
+    var jinseiBg = document.getElementById('jinsei-bg');
+    if (jinseiBg) {
+      jinseiBg.remove();
+    }
+  });
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script>
     document.title = "Andrew Mitchell - Art";
+
     $(document).ready(function () {
         $("a.nav-item.nav-link:contains('ART')").css("text-decoration", "underline");
         $("#eye").removeClass("d-none");
     });
 </script>
 <style>
+
     #canvas-container {
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100%;
-        height: 100dvh;
+        height: 100dvh; /* Dynamic viewport height for mobile */
         z-index: 10;
         pointer-events: none;
         overflow: hidden;
@@ -29,6 +40,7 @@
         pointer-events: none;
     }
 
+    /* Overlay for artwork labels */
     .blob-label {
         position: absolute;
         pointer-events: auto;
@@ -51,9 +63,8 @@
     .blob-label .title {
         text-decoration: none;
         font-size: 1rem;
-        font-weight: 500;
+        font-weight: 700;
         display: block;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         line-height: 1.2;
         max-width: 90%;
         overflow: hidden;
@@ -63,24 +74,53 @@
 
     .blob-label .year {
         font-size: 0.5rem;
-        opacity: 0.6;
+        opacity: 0.8;
         margin-bottom: 2px;
         transition: transform 0.2s ease;
     }
 
     .blob-label .collab {
         transition: transform 0.2s ease;
+        font-size: 0.6rem;
     }
 
-    .blob-label .title,
-    .blob-label .year,
-    .blob-label .collab,
-    .blob-label .collab a {
+    /* The shapes invert against the page — off-white on the dark page, near-black
+       on the light one — so the label text sitting on top has to invert with
+       them. #canvas-container gets .on-dark from draw() whenever the mode flips.
+       The accent blob keeps its colour in both modes, so it always wants white. */
+    #canvas-container.on-dark .blob-label:not(.accent) .title,
+    #canvas-container.on-dark .blob-label:not(.accent) .year,
+    #canvas-container.on-dark .blob-label:not(.accent) .collab,
+    #canvas-container.on-dark .blob-label:not(.accent) .collab a,
+    #canvas-container.on-dark .blob-label:not(.accent) .click-hint {
+        color: #f4f2ef !important;
+    }
+
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .title,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .year,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .collab,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .collab a,
+    #canvas-container:not(.on-dark) .blob-label:not(.accent) .click-hint {
+        color: #1e1a1c !important;
+    }
+
+    .blob-label.accent .title,
+    .blob-label.accent .year,
+    .blob-label.accent .collab,
+    .blob-label.accent .collab a,
+    .blob-label.accent .click-hint {
         color: var(--white) !important;
     }
 
+    /* The drop shadow is tuned for light text; on the off-white shapes it just
+       muddies the dark type. */
+    #canvas-container.on-dark .blob-label:not(.accent) .title {
+        text-shadow: none;
+    }
+
+    /* Hover used to lighten the text, which is invisible on a white shape.
+       The scale alone is enough feedback. */
     .blob-label:hover .title {
-        color: rgba(255, 255, 255, 0.9) !important;
         transform: scale(1.15);
     }
 
@@ -113,12 +153,10 @@
         left: 50%;
         transform: translateX(-50%);
         font-size: 0.5rem;
-        color: var(--white);
         opacity: 0;
         transition: opacity 0.3s ease;
         white-space: nowrap;
         pointer-events: none;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
 
     .new-badge {
@@ -131,6 +169,14 @@
         margin-left: 5px;
         vertical-align: middle;
         font-weight: 600;
+    }
+
+    .minting-badge {
+        background: #fff;
+        color: #111;
+        border: 1px solid #fff;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
     }
 
     .view-collections-btn {
@@ -154,21 +200,38 @@
     }
 
     @media (max-width: 768px) {
-        .blob-label .title { font-size: 0.65rem; }
-        .blob-label .year { font-size: 0.45rem; }
+        .blob-label .title {
+            font-size: 0.65rem;
+        }
+        .blob-label .year {
+            font-size: 0.45rem;
+        }
         .blob-label .collab,
-        .blob-label .collab a { font-size: 0.4rem; }
-        .new-badge { font-size: 0.4em; padding: 2px 5px; margin-left: 4px; }
-        .view-collections-btn { bottom: 50px; right: 15px; padding: 4px 6px; font-size: 0.8em; }
+        .blob-label .collab a {
+            font-size: 0.4rem;
+        }
+        .new-badge {
+            font-size: 0.4em;
+            padding: 2px 5px;
+            margin-left: 4px;
+        }
+        .view-collections-btn {
+            bottom: 50px;
+            right: 15px;
+            padding: 4px 6px;
+            font-size: 0.8em;
+        }
     }
 </style>
 
 <div id="canvas-container"></div>
 
 <script>
+// Artwork data
 const artworks = [
+    { title: "Untitled", year: "2024", href: "https://opensea.io/collection/untitled-2024-2026-by-andrew-mitchell" },
     { title: "NOKORI", year: "2026", href: "art/nokori.php", isNew: true },
-    { title: "???", year: "", href: "art/untitled.php" },
+    { title: "Angels", year: "2026", href: "art/angels.php"},
     { title: "Popup", year: "2024", href: "art/popup.php" },
     { title: "Prozac Youth", year: "2024", href: "art/prozacyouth.php", collab: "Created with <a href='https://tjo.art/' target='_blank'>Tjo</a>" },
     { title: "Modulo", year: "2024", href: "art/modulo.php", collab: "with <a href='https://x.com/cafromthesky' target='_blank'>Rich Caldwell</a>" },
@@ -183,406 +246,520 @@ const artworks = [
     { title: "Primera", year: "2021", href: "art/primera.php", collab: "with <a href='https://www.ribbonriven.com/' target='_blank'>Grant Yun</a>" }
 ];
 
-const { Engine, World, Bodies, Body } = Matter;
+// Matter.js setup
+const Engine = Matter.Engine;
+const World = Matter.World;
+const Bodies = Matter.Bodies;
+const Body = Matter.Body;
 
-let engine, world, blobs = [], labels = [];
+let engine;
+let world;
+let blobs = [];
+let labels = [];
 let ground, leftWall, rightWall;
-let footerHeight = 60;
-let initialWidth, initialHeight, initialPixelRatio;
+let footerHeight = 60; // Default fallback
+let initialWidth, initialHeight; // Track initial dimensions
+let initialPixelRatio; // Track pixel ratio to detect zoom
 
+// Track mouse position manually since canvas has pointer-events: none
 let cursorX = -9999, cursorY = -9999;
-document.addEventListener('mousemove', e => { cursorX = e.clientX; cursorY = e.clientY; });
-document.addEventListener('touchmove', e => { cursorX = e.touches[0].clientX; cursorY = e.touches[0].clientY; });
+document.addEventListener('mousemove', (e) => { cursorX = e.clientX; cursorY = e.clientY; });
+document.addEventListener('touchmove', (e) => { cursorX = e.touches[0].clientX; cursorY = e.touches[0].clientY; });
 document.addEventListener('touchend', () => { cursorX = -9999; cursorY = -9999; });
 document.addEventListener('touchcancel', () => { cursorX = -9999; cursorY = -9999; });
 
-let hasGyro = false;
-let baseGravityY = 0.9;
-
-function handleOrientation(e) {
-    if (!engine || e.gamma === null || e.beta === null) return;
-    hasGyro = true;
-    const gamma = Math.max(-90, Math.min(90, e.gamma));
-    const beta = Math.max(-90, Math.min(90, e.beta));
-    engine.world.gravity.x = gamma / 90;
-    engine.world.gravity.y = Math.max(0.15, beta / 90);
-}
-
-function enableGyro() {
-    if (typeof DeviceOrientationEvent !== 'undefined' &&
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(function(state) {
-            if (state === 'granted') window.addEventListener('deviceorientation', handleOrientation);
-        }).catch(function() {});
-    } else {
-        window.addEventListener('deviceorientation', handleOrientation);
-    }
-}
-
-document.addEventListener('touchstart', function gyroInit() {
-    enableGyro();
-    document.removeEventListener('touchstart', gyroInit);
-}, { once: true });
-
-let pretextPrepared = null;
-let pretextLayoutNextLine = null;
+// Pretext - dynamic text reflow
+let pretextPrepared = null; // prepareWithSegments result
+let pretextLayoutNextLine = null; // layoutNextLine function ref
 let pretextReady = false;
 let pretextFontSize = 9;
 let pretextLineHeight = 13;
-let pretextColumns = [];
+let pretextColumns = []; // { left, right } for each column
 const pretextColumnGap = 14;
+let lastLabelMode = null; // tracks the mode the label colours are currently set for
 
-const blobColor = { fill: 'hsl(220, 85%, 15%)', stroke: 'hsl(220, 85%, 25%)' };
-const newHue = [0, 25, 45, 145, 330][Math.floor(Math.random() * 5)];
-const blobColorNew = { fill: `hsl(${newHue}, 85%, 32%)`, stroke: `hsl(${newHue}, 85%, 44%)` };
+// Blob colour — taken from the background config so the two stay in sync.
+// The shapes are the *other* mode's base tone: off-white on the dark page,
+// near-black on the light one. They read as cut-outs from the same paper rather
+// than as coloured objects sitting on top of it. Only the newest work is
+// coloured, on the texture's own hue, so it is the single accent on the page.
+const BG_CFG = window.JINSEI_BG || {};
+const BLOB_DARK_TONE = '#000000';
+const BLOB_LIGHT_TONE = '#ffffff';
+const BLOB_ACCENT_HUE = BG_CFG.texBHue === undefined ? 335 : BG_CFG.texBHue;
 
+// Slight transparency so the page's weave reads through the shapes. The stroke
+// stays fully opaque so the edges stay crisp — a translucent fill with a solid
+// rim looks deliberate, whereas fading both just looks washed out.
+let BLOB_FILL_ALPHA = 0.6;
+let BLOB_STROKE_ALPHA = 1;
+
+// p5's colour parser wants integer channels in rgba(), so round on the way in.
+function withAlpha(hex, alpha) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Read the DOM, not isDarkMode: setLightMode(true) applies the *light* palette
+// while setting that flag true, so the flag reads backwards.
+function pageIsDark() {
+    const b = document.body;
+    if (b.classList.contains('light-bg')) return false;
+    if (b.classList.contains('dark-bg')) return true;
+    const m = (getComputedStyle(b).backgroundColor || '').match(/\d+/g);
+    return m ? (0.2126 * +m[0] + 0.7152 * +m[1] + 0.0722 * +m[2]) < 128 : true;
+}
+
+// Resolved per frame so the shapes flip when the dark/light toggle is hit.
+function blobPalette(isNew, isDark) {
+    if (isNew) {
+        // New artworks use pink with inverted stroke like other shapes
+        return isDark
+            ? { fill: withAlpha('#ff0000', BLOB_FILL_ALPHA), stroke: withAlpha('#000000', BLOB_STROKE_ALPHA) }
+            : { fill: withAlpha('#ff0000', BLOB_FILL_ALPHA), stroke: withAlpha('#ffffff', BLOB_STROKE_ALPHA) };
+    }
+    // Other artworks use white fill with black stroke in dark mode, black fill with white stroke in light mode
+    return isDark
+        ? { fill: withAlpha('#121212', BLOB_FILL_ALPHA), stroke: withAlpha('#000000', BLOB_STROKE_ALPHA) }
+        : { fill: withAlpha('#fffafa', BLOB_FILL_ALPHA), stroke: withAlpha('#ffffff', BLOB_STROKE_ALPHA) };
+}
+
+// Function to update ground position based on footer
 function updateGroundPosition() {
-    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const vw = window.innerWidth;
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
     const footer = document.getElementById('footer');
-    if (footer && footer.offsetHeight > 0) footerHeight = footer.offsetHeight;
+    if (footer && footer.offsetHeight > 0) {
+        footerHeight = footer.offsetHeight;
+    }
 
     const thickness = 100;
-    const groundY = vh - footerHeight + thickness / 2;
+    const groundY = viewportHeight - footerHeight + thickness / 2;
+
     if (ground) {
-        Body.setPosition(ground, { x: vw / 2, y: groundY });
-        Body.setVertices(ground, Bodies.rectangle(vw / 2, groundY, vw * 2, thickness).vertices);
+        Body.setPosition(ground, { x: viewportWidth / 2, y: groundY });
+        Body.setVertices(ground, Bodies.rectangle(viewportWidth / 2, groundY, viewportWidth * 2, thickness).vertices);
     }
 }
 
 function setup() {
-    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const vw = window.innerWidth;
-    initialWidth = vw;
-    initialHeight = vh;
+    // Get actual viewport height for mobile (accounts for browser UI)
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // Store initial dimensions and pixel ratio
+    initialWidth = viewportWidth;
+    initialHeight = viewportHeight;
     initialPixelRatio = window.devicePixelRatio || 1;
 
+    // Calculate footer height - try to get it now, but will recalculate later
     const footer = document.getElementById('footer');
-    if (footer && footer.offsetHeight > 0) footerHeight = footer.offsetHeight;
+    if (footer && footer.offsetHeight > 0) {
+        footerHeight = footer.offsetHeight;
+    }
 
-    const canvas = createCanvas(vw, vh);
+    const canvas = createCanvas(viewportWidth, viewportHeight);
     canvas.parent('canvas-container');
 
-    const isMobile = vw < 768;
-    baseGravityY = isMobile ? 0.5 : 0.9;
+    // Detect mobile early so physics can be tuned
+    const isMobile = viewportWidth < 768;
 
+    // Create physics engine with improved collision settings
     engine = Engine.create();
     world = engine.world;
-    engine.world.gravity.y = baseGravityY;
-    engine.positionIterations = 20;
-    engine.velocityIterations = 16;
+    engine.world.gravity.y = isMobile ? 0.5 : 0.9;
 
+    // Improve collision detection to prevent overlap
+    engine.positionIterations = 20;   // High iteration count for tighter position solving
+    engine.velocityIterations = 16;   // High velocity iterations for cleaner separation
+
+    // Create boundaries - ground at the bottom of visible viewport
     const thickness = 100;
-    const groundY = vh - footerHeight + thickness / 2;
-    ground = Bodies.rectangle(vw / 2, groundY, vw * 2, thickness, { isStatic: true });
-    leftWall = Bodies.rectangle(-thickness / 2, vh / 2, thickness, vh * 3, { isStatic: true });
-    rightWall = Bodies.rectangle(vw + thickness / 2, vh / 2, thickness, vh * 3, { isStatic: true });
+    const groundY = viewportHeight - footerHeight + thickness / 2;
+    ground = Bodies.rectangle(viewportWidth / 2, groundY, viewportWidth * 2, thickness, { isStatic: true });
+    leftWall = Bodies.rectangle(-thickness / 2, viewportHeight / 2, thickness, viewportHeight * 3, { isStatic: true });
+    rightWall = Bodies.rectangle(viewportWidth + thickness / 2, viewportHeight / 2, thickness, viewportHeight * 3, { isStatic: true });
+
     World.add(world, [ground, leftWall, rightWall]);
 
-    const minR = isMobile ? min(width, height) * 0.15 : min(width, height) * 0.12;
-    const maxR = isMobile ? min(width, height) * 0.20 : min(width, height) * 0.18;
+    // Create blobs for each artwork - responsive sizing
+    const minRadius = isMobile ? min(width, height) * 0.15 : min(width, height) * 0.12;
+    const maxRadius = isMobile ? min(width, height) * 0.20 : min(width, height) * 0.18;
+
+    // Shape types cycle: circle, hexagon, square
     const shapeTypes = ['circle', 'square'];
 
-    artworks.forEach((art, i) => {
-        const r = art.isNew ? maxR : random(minR, maxR);
-        const x = random(r, width - r);
+    artworks.forEach((artwork, index) => {
+        const radius = artwork.isNew ? maxRadius : random(minRadius, maxRadius);
+        const x = random(radius, width - radius);
+        // On mobile, space blobs further apart above the viewport so they trickle in slowly
         const y = isMobile
-            ? -r - (i * r * 3.5) - random(100, 250)
-            : -r - (i * r * 2.5) - random(50, 150);
+            ? -radius - (index * radius * 3.5) - random(80, 200)
+            : -radius - (index * radius * 2.5) - random(50, 150);
 
-        const opts = {
+        const physicsOpts = {
             restitution: isMobile ? 0.95 : 0.8,
             friction: isMobile ? 0.02 : 0.05,
             frictionAir: isMobile ? 0.006 : 0.008,
             density: 0.004,
-            slop: 0.001
+            slop: 0.001   // Near-zero overlap tolerance
         };
 
-        const shape = art.isNew ? 'circle' : shapeTypes[i % shapeTypes.length];
+        // Pick shape — new items always get circle, others cycle
+        const shape = artwork.isNew ? 'circle' : shapeTypes[index % shapeTypes.length];
+
         let body;
         if (shape === 'hexagon') {
-            body = Bodies.polygon(x, y, 6, r, opts);
+            body = Bodies.polygon(x, y, 6, radius, physicsOpts);
         } else if (shape === 'square') {
-            body = Bodies.rectangle(x, y, r * 1.6, r * 1.6, { ...opts, chamfer: { radius: 4 } });
+            const side = radius * 1.6;
+            body = Bodies.rectangle(x, y, side, side, {
+                ...physicsOpts,
+                chamfer: { radius: 4 }  // Rounded corners in physics to prevent corner penetration
+            });
         } else {
-            body = Bodies.circle(x, y, r, opts);
+            body = Bodies.circle(x, y, radius, physicsOpts);
         }
 
-        Body.setVelocity(body, { x: random(-1, 1), y: isMobile ? random(0, 0.5) : random(0, 2) });
+        // Add slight random initial velocity – gentler on mobile
+        Body.setVelocity(body, {
+            x: random(-1, 1),
+            y: isMobile ? random(0, 0.5) : random(0, 2)
+        });
+
         World.add(world, body);
 
         blobs.push({
-            body, radius: r,
-            color: art.isNew ? blobColorNew : blobColor,
-            artwork: art, shape
+            body: body,
+            radius: radius,
+            artwork: artwork,
+            shape: shape
         });
-        createLabel(art, i, r, shape);
+
+        // Create HTML label for this blob
+        createLabel(artwork, index, radius, shape);
     });
 
+    // Prepare text with Pretext (one-time measurement, reflow happens per-frame)
     prepareText();
-    initDragHandlers();
 
-    try {
-        var saved = sessionStorage.getItem('artBlobState');
-        if (saved) {
-            var state = JSON.parse(saved);
-            if (state.count === blobs.length
-                && Math.abs(state.viewportWidth - vw) < 100
-                && Math.abs(state.viewportHeight - vh) < 100) {
-                blobs.forEach(function(blob, i) {
-                    if (state.positions[i]) {
-                        Body.setPosition(blob.body, { x: state.positions[i].x, y: state.positions[i].y });
-                        Body.setAngle(blob.body, state.positions[i].angle);
-                        Body.setVelocity(blob.body, { x: 0, y: 0 });
-                        Body.setAngularVelocity(blob.body, 0);
-                    }
-                });
-            }
-        }
-    } catch (e) {}
+    // Enable click-and-drag / throw interaction
+    initDragHandlers();
 }
 
 function createLabel(artwork, index, radius, shape) {
-    const el = document.createElement('a');
-    el.className = 'blob-label';
-    el.id = `label-${index}`;
-    el.href = artwork.href;
-    el.title = 'Double-click to open';
+    const label = document.createElement('a');
+    // .accent opts out of the invert-with-the-page text rules: that shape stays
+    // coloured in both modes, so its label always wants white text.
+    label.className = artwork.isNew ? 'blob-label' : 'blob-label';
+    label.id = `label-${index}`;
+    label.href = artwork.href;
+    label.title = 'Double-click to open';
 
+    // Set size to match the blob
     const size = radius * 2;
     if (shape === 'square') {
         const side = radius * 1.6;
-        el.style.width = `${side}px`;
-        el.style.height = `${side}px`;
-        el.style.borderRadius = '4px';
+        label.style.width = `${side}px`;
+        label.style.height = `${side}px`;
+        label.style.borderRadius = '4px';
     } else if (shape === 'hexagon') {
-        el.style.width = `${size}px`;
-        el.style.height = `${size}px`;
-        el.style.borderRadius = '0';
-        el.style.clipPath = 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)';
-        el.style.webkitClipPath = 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)';
+        label.style.width = `${size}px`;
+        label.style.height = `${size}px`;
+        label.style.borderRadius = '0';
+        label.style.clipPath = 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)';
+        label.style.webkitClipPath = 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)';
     } else {
-        el.style.width = `${size}px`;
-        el.style.height = `${size}px`;
+        label.style.width = `${size}px`;
+        label.style.height = `${size}px`;
     }
 
-    el.innerHTML = `
+    let titleHtml = artwork.title;
+    if (artwork.minting) {
+        titleHtml += ' <br><br><span class="new-badge minting-badge">MINTING</span>';
+    }
+    label.innerHTML = `
         <div class="year">${artwork.year}</div>
-        <div class="title">${artwork.title}</div>
+        <div class="title">${titleHtml}</div>
         ${artwork.collab ? `<div class="collab">${artwork.collab}</div>` : ''}
     `;
 
-    document.getElementById('canvas-container').appendChild(el);
-    labels.push({ element: el, radius });
+    document.getElementById('canvas-container').appendChild(label);
+    labels.push({ element: label, radius: radius });
 }
 
 async function prepareText() {
     await document.fonts.ready;
+
     try {
         const pretext = await import('https://esm.sh/@chenglou/pretext');
         pretextLayoutNextLine = pretext.layoutNextLine;
 
-        const jp = "絵を作る。世界の広さに身を任せる。遊ぶ。自分の公理で作る。絵を見に行く。新しい人に会う。友達を見つける。白昼夢を見る。失敗する。もっと絵を作る。";
-        const en = "Never stop creating. Lose yourself in the vastness of the world. Play. Work with your axioms. Seek art. Meet new people. Make friends. Daydream. Embrace mistakes. Create more.";
+        const baseText = "Dear Andrew: 1. Do not stop making art. 2. Lose control. 3. Play. 4. Work with your axioms. 5. See art. 6. Meet people. 7. Make friends. 8. Daydream. 9. Make mistakes. 10. Make more art. ";
+        // Repeat the text many times so it fills the whole screen
+        const aboutText = baseText.repeat(40);
 
         const isMobile = width < 768;
-        pretextFontSize = isMobile ? 8 : 16;
+        pretextFontSize = isMobile ? 7 : 9;
         pretextLineHeight = pretextFontSize * 1.45;
 
+        // Build columns edge-to-edge
         const numCols = isMobile ? 3 : 5;
         const margin = 20;
         const totalGap = pretextColumnGap * (numCols - 1);
-        const colW = (width - margin * 2 - totalGap) / numCols;
+        const colWidth = (width - margin * 2 - totalGap) / numCols;
         pretextColumns = [];
-        const colTexts = [];
-
         for (let i = 0; i < numCols; i++) {
-            const left = margin + i * (colW + pretextColumnGap);
-            pretextColumns.push({ left, right: left + colW });
-            colTexts.push((i % 2 === 0) ? jp.repeat(40) : en.repeat(40));
+            const left = margin + i * (colWidth + pretextColumnGap);
+            pretextColumns.push({ left: left, right: left + colWidth });
         }
 
-        const font = `${pretextFontSize}px Satoshi-Regular`;
-        pretextPrepared = colTexts.map(t => pretext.prepareWithSegments(t, font));
+        const font = `${pretextFontSize}px JetBrainsMono-Regular`;
+        pretextPrepared = pretext.prepareWithSegments(aboutText, font);
         pretextReady = true;
     } catch (e) {
-        console.warn('Pretext load failed:', e);
+        console.warn('Pretext failed to load:', e);
     }
 }
 
+// Each frame: reflow text around current ball positions using layoutNextLine
+// Runs per-column, each column gets its own independent text stream
 function reflowTextAroundBalls() {
     if (!pretextReady || !pretextPrepared || !pretextLayoutNextLine) return [];
 
     const startY = 80;
     const lh = pretextLineHeight;
-    const pad = 6;
-    const out = [];
+    const padding = 6;
+    const allLines = [];
 
-    pretextColumns.forEach((col, ci) => {
+    for (const col of pretextColumns) {
         let cursor = { segmentIndex: 0, graphemeIndex: 0 };
         let y = startY;
-        const prepared = pretextPrepared[ci];
 
         while (y < height - footerHeight - lh) {
-            let lineL = col.left, lineR = col.right;
+            let lineLeft = col.left;
+            let lineRight = col.right;
 
+            // Shrink this line around any overlapping blobs
             for (const blob of blobs) {
                 const pos = blob.body.position;
-                const ang = blob.body.angle;
-                let bL, bR, bT, bB;
+                const angle = blob.body.angle;
+                let blobLeft, blobRight, blobTop, blobBottom;
 
                 if (blob.shape === 'square') {
-                    const hs = blob.radius * 1.6 / 2;
-                    const ca = Math.cos(ang), sa = Math.sin(ang);
+                    // Compute exact left/right edges of the rotated square at this scanline
+                    const halfSide = blob.radius * 1.6 / 2;
+                    const cos_a = Math.cos(angle);
+                    const sin_a = Math.sin(angle);
+
+                    // Four corners of the square in world space
                     const corners = [
-                        { x: pos.x - hs * ca + hs * sa, y: pos.y - hs * sa - hs * ca },
-                        { x: pos.x + hs * ca + hs * sa, y: pos.y + hs * sa - hs * ca },
-                        { x: pos.x + hs * ca - hs * sa, y: pos.y + hs * sa + hs * ca },
-                        { x: pos.x - hs * ca - hs * sa, y: pos.y - hs * sa + hs * ca }
+                        { x: pos.x + (-halfSide) * cos_a - (-halfSide) * sin_a, y: pos.y + (-halfSide) * sin_a + (-halfSide) * cos_a },
+                        { x: pos.x + ( halfSide) * cos_a - (-halfSide) * sin_a, y: pos.y + ( halfSide) * sin_a + (-halfSide) * cos_a },
+                        { x: pos.x + ( halfSide) * cos_a - ( halfSide) * sin_a, y: pos.y + ( halfSide) * sin_a + ( halfSide) * cos_a },
+                        { x: pos.x + (-halfSide) * cos_a - ( halfSide) * sin_a, y: pos.y + (-halfSide) * sin_a + ( halfSide) * cos_a }
                     ];
-                    const scanY = y + lh / 2;
-                    let xs = [];
+
+                    // Scanline-edge intersection: find where the horizontal band [y, y+lh] crosses the rotated rect
+                    const scanY = y + lh / 2; // use midpoint of line
+                    let xIntersections = [];
                     for (let i = 0; i < 4; i++) {
-                        const c1 = corners[i], c2 = corners[(i + 1) % 4];
-                        const yMin = Math.min(c1.y, c2.y), yMax = Math.max(c1.y, c2.y);
+                        const c1 = corners[i];
+                        const c2 = corners[(i + 1) % 4];
+                        const yMin = Math.min(c1.y, c2.y);
+                        const yMax = Math.max(c1.y, c2.y);
                         if (scanY >= yMin && scanY <= yMax && yMax - yMin > 0.001) {
                             const t = (scanY - c1.y) / (c2.y - c1.y);
-                            xs.push(c1.x + t * (c2.x - c1.x));
+                            xIntersections.push(c1.x + t * (c2.x - c1.x));
                         }
                     }
-                    if (xs.length >= 2) {
-                        bL = Math.min(...xs) - pad;
-                        bR = Math.max(...xs) + pad;
-                        bT = Math.min(...corners.map(c => c.y)) - pad;
-                        bB = Math.max(...corners.map(c => c.y)) + pad;
-                    } else continue;
+
+                    if (xIntersections.length >= 2) {
+                        blobLeft = Math.min(...xIntersections) - padding;
+                        blobRight = Math.max(...xIntersections) + padding;
+                        blobTop = Math.min(corners[0].y, corners[1].y, corners[2].y, corners[3].y) - padding;
+                        blobBottom = Math.max(corners[0].y, corners[1].y, corners[2].y, corners[3].y) + padding;
+                    } else {
+                        continue; // scanline doesn't cross the square
+                    }
                 } else if (blob.shape === 'hexagon') {
-                    const r = blob.radius + pad;
-                    bL = pos.x - r; bR = pos.x + r;
-                    bT = pos.y - r; bB = pos.y + r;
+                    const r = blob.radius + padding;
+                    blobLeft = pos.x - r;
+                    blobRight = pos.x + r;
+                    blobTop = pos.y - r;
+                    blobBottom = pos.y + r;
                 } else {
-                    const r = blob.radius + pad;
+                    // Circle — use chord math for smooth curving
+                    const r = blob.radius + padding;
                     if (pos.y + r > y && pos.y - r < y + lh) {
                         const dy = Math.min(Math.abs(y + lh / 2 - pos.y), r);
                         const halfChord = Math.sqrt(Math.max(r * r - dy * dy, 0));
-                        bL = pos.x - halfChord;
-                        bR = pos.x + halfChord;
-                    } else continue;
-                    bT = pos.y - r; bB = pos.y + r;
+                        blobLeft = pos.x - halfChord;
+                        blobRight = pos.x + halfChord;
+                    } else {
+                        continue;
+                    }
+                    blobTop = pos.y - r;
+                    blobBottom = pos.y + r;
                 }
 
-                if (bB > y && bT < y + lh && bR > lineL && bL < lineR) {
-                    if (lineR - bR >= bL - lineL) lineL = Math.max(lineL, bR);
-                    else lineR = Math.min(lineR, bL);
+                // Does this blob overlap the line's y range?
+                if (blobBottom > y && blobTop < y + lh) {
+                    if (blobRight > lineLeft && blobLeft < lineRight) {
+                        const spaceRight = lineRight - blobRight;
+                        const spaceLeft = blobLeft - lineLeft;
+
+                        if (spaceRight >= spaceLeft) {
+                            lineLeft = Math.max(lineLeft, blobRight);
+                        } else {
+                            lineRight = Math.min(lineRight, blobLeft);
+                        }
+                    }
                 }
             }
 
-            const avail = lineR - lineL;
-            if (avail < pretextFontSize * 3) { y += lh; continue; }
+            const availWidth = lineRight - lineLeft;
+            if (availWidth < pretextFontSize * 3) {
+                y += lh;
+                continue;
+            }
 
-            const line = pretextLayoutNextLine(prepared, cursor, avail);
+            const line = pretextLayoutNextLine(pretextPrepared, cursor, availWidth);
             if (!line) {
+                // Text exhausted — wrap around and start repeating
                 cursor = { segmentIndex: 0, graphemeIndex: 0 };
-                const line2 = pretextLayoutNextLine(prepared, cursor, avail);
+                const line2 = pretextLayoutNextLine(pretextPrepared, cursor, availWidth);
                 if (!line2) break;
-                out.push({ text: line2.text, x: lineL, y, width: line2.width });
+                allLines.push({ text: line2.text, x: lineLeft, y: y, width: line2.width });
                 cursor = line2.end;
             } else {
-                out.push({ text: line.text, x: lineL, y, width: line.width });
+                allLines.push({ text: line.text, x: lineLeft, y: y, width: line.width });
                 cursor = line.end;
             }
             y += lh;
         }
-    });
+    }
 
-    return out;
+    return allLines;
 }
 
 function draw() {
     clear();
+
+    // Update physics
     Engine.update(engine);
 
-    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const vw = window.innerWidth;
-    const margin = 300;
-    blobs.forEach(blob => {
-        const p = blob.body.position;
-        if (p.x < -margin || p.x > vw + margin || p.y < -margin * 4 || p.y > vh + margin) {
-            Body.setPosition(blob.body, { x: vw / 2 + (Math.random() - 0.5) * vw * 0.5, y: -blob.radius * 2 });
-            Body.setVelocity(blob.body, { x: 0, y: 0 });
-            Body.setAngularVelocity(blob.body, 0);
-        }
-    });
-
+    // Reflow text around balls every frame, then draw
     if (pretextReady) {
-        const lines = reflowTextAroundBalls();
+        const reflowed = reflowTextAroundBalls();
         push();
-        textFont('Satoshi-Regular');
+        textFont('JetBrainsMono-Regular');
         textSize(pretextFontSize);
         textAlign(LEFT, TOP);
         noStroke();
         fill(isDarkMode ? 0 : 255);
-        for (const ln of lines) text(ln.text, ln.x, ln.y);
+        for (const line of reflowed) {
+            text(line.text, line.x, line.y);
+        }
         pop();
     }
 
-    blobs.forEach((blob, i) => {
+    // Draw and update blobs
+    const isDark = pageIsDark();
+
+    // Flip the label text colours with the shapes, but only when the mode
+    // actually changes — this runs every frame.
+    if (isDark !== lastLabelMode) {
+        lastLabelMode = isDark;
+        document.getElementById('canvas-container').classList.toggle('on-dark', isDark);
+    }
+
+    blobs.forEach((blob, index) => {
         const pos = blob.body.position;
-        const ang = blob.body.angle;
+        const angle = blob.body.angle;
+        const palette = blobPalette(blob.artwork.isNew, isDark);
 
         push();
         translate(pos.x, pos.y);
-        rotate(ang);
-        stroke(blob.color.stroke);
+        rotate(angle);
+
+        // Minimal stroke for clean edges
+        stroke(color(palette.stroke));
         strokeWeight(2);
-        fill(blob.color.fill);
+        fill(color(palette.fill));
 
         if (blob.shape === 'hexagon') {
+            const r = blob.radius;
+            // Regular hexagon centered at origin
             beginShape();
             for (let a = 0; a < 6; a++) {
-                const th = (TWO_PI / 6) * a - HALF_PI;
-                vertex(cos(th) * blob.radius, sin(th) * blob.radius);
+                const angle_h = (TWO_PI / 6) * a - HALF_PI;
+                vertex(cos(angle_h) * r, sin(angle_h) * r);
             }
             endShape(CLOSE);
         } else if (blob.shape === 'square') {
-            const s = blob.radius * 1.6;
+            const side = blob.radius * 1.6;
             rectMode(CENTER);
-            rect(0, 0, s, s, 4);
+            rect(0, 0, side, side, 4); // 4px corner rounding
         } else {
             ellipse(0, 0, blob.radius * 2, blob.radius * 2);
         }
+
         pop();
 
-        const lbl = labels[i];
-        if (lbl && lbl.element) {
-            lbl.element.style.left = `${pos.x}px`;
-            lbl.element.style.top = `${pos.y}px`;
-            lbl.element.style.transform = `translate(-50%, -50%) rotate(${ang}rad)`;
+        // Update label position
+        const labelObj = labels[index];
+        if (labelObj && labelObj.element) {
+            labelObj.element.style.left = `${pos.x}px`;
+            labelObj.element.style.top = `${pos.y}px`;
+            labelObj.element.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
         }
     });
 }
 
 function windowResized() {
-    const dpr = window.devicePixelRatio || 1;
-    if (Math.abs(dpr - initialPixelRatio) > 0.01) {
-        initialPixelRatio = dpr;
+    // Detect zoom by checking if devicePixelRatio changed
+    const currentPixelRatio = window.devicePixelRatio || 1;
+    if (Math.abs(currentPixelRatio - initialPixelRatio) > 0.01) {
+        // This is a zoom event, not a resize - ignore it
+        initialPixelRatio = currentPixelRatio;
         return;
     }
 
-    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const vw = window.innerWidth;
-    if (Math.abs(vw - initialWidth) < 100 && Math.abs(vh - initialHeight) < 100) return;
+    // Get actual viewport dimensions
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const viewportWidth = window.innerWidth;
 
-    initialWidth = vw;
-    initialHeight = vh;
-    resizeCanvas(vw, vh);
+    // Only resize if it's a significant change (actual resize, not zoom)
+    const widthDiff = Math.abs(viewportWidth - initialWidth);
+    const heightDiff = Math.abs(viewportHeight - initialHeight);
+
+    // Threshold: only resize if dimensions changed by more than 100px (actual resize/rotation)
+    if (widthDiff < 100 && heightDiff < 100) {
+        return; // Ignore small changes
+    }
+
+    // Update stored dimensions
+    initialWidth = viewportWidth;
+    initialHeight = viewportHeight;
+
+    resizeCanvas(viewportWidth, viewportHeight);
+
+    // Update ground and walls position
     updateGroundPosition();
 
+    // Update walls
     const thickness = 100;
-    Body.setPosition(leftWall, { x: -thickness / 2, y: vh / 2 });
-    Body.setPosition(rightWall, { x: vw + thickness / 2, y: vh / 2 });
+    Body.setPosition(leftWall, { x: -thickness / 2, y: viewportHeight / 2 });
+    Body.setPosition(rightWall, { x: viewportWidth + thickness / 2, y: viewportHeight / 2 });
 }
 
+// Mouse / touch drag interaction
 let dragBlob = null;
 let dragOffset = { x: 0, y: 0 };
 let dragStart = { x: 0, y: 0 };
@@ -593,92 +770,143 @@ let dragIndex = -1;
 let touchLastTapTime = 0;
 
 function initDragHandlers() {
-    labels.forEach((lbl, index) => {
-        const el = lbl.element;
+    const container = document.getElementById('canvas-container');
 
+    labels.forEach((labelObj, index) => {
+        const el = labelObj.element;
+
+        // Prevent default link behavior on mousedown/touchstart so we can detect drag
         const onStart = (e) => {
-            const cx = e.touches ? e.touches[0].clientX : e.clientX;
-            const cy = e.touches ? e.touches[0].clientY : e.clientY;
-            const pos = blobs[index].body.position;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const blob = blobs[index];
+            const pos = blob.body.position;
 
-            dragBlob = blobs[index];
+            dragBlob = blob;
             dragIndex = index;
-            dragOffset.x = pos.x - cx;
-            dragOffset.y = pos.y - cy;
-            dragStart.x = cx;
-            dragStart.y = cy;
-            lastDragPos.x = cx;
-            lastDragPos.y = cy;
-            prevDragPos.x = cx;
-            prevDragPos.y = cy;
+            dragOffset.x = pos.x - clientX;
+            dragOffset.y = pos.y - clientY;
+            dragStart.x = clientX;
+            dragStart.y = clientY;
+            lastDragPos.x = clientX;
+            lastDragPos.y = clientY;
+            prevDragPos.x = clientX;
+            prevDragPos.y = clientY;
             isDragging = false;
 
-            Body.setStatic(dragBlob.body, true);
+            // Make body static while dragging so it doesn't fight gravity
+            Body.setStatic(blob.body, true);
             document.body.style.cursor = 'grabbing';
+
             e.preventDefault();
         };
 
         el.addEventListener('mousedown', onStart);
         el.addEventListener('touchstart', onStart, { passive: false });
 
+        // Block all clicks — navigation only via double-click/double-tap
         let lastTapTime = 0;
         el.addEventListener('click', (e) => {
             e.preventDefault();
             const now = Date.now();
             if (now - lastTapTime < 400) {
-                if (blobs[index].artwork.href) window.location.href = blobs[index].artwork.href;
+                // Double-tap/double-click
+                if (blobs[index].artwork.href) {
+                    window.location.href = blobs[index].artwork.href;
+                }
                 lastTapTime = 0;
                 return;
             }
             lastTapTime = now;
-            if (!isDragging) showHint(el);
+            if (!isDragging) {
+                // Show a brief hint
+                let hint = el.querySelector('.click-hint');
+                if (!hint) {
+                    hint = document.createElement('div');
+                    hint.className = 'click-hint';
+                    hint.textContent = 'double-tap to open';
+                    el.appendChild(hint);
+                }
+                hint.style.opacity = '1';
+                clearTimeout(hint._timer);
+                hint._timer = setTimeout(() => { hint.style.opacity = '0'; }, 1200);
+            }
         });
         el.addEventListener('dblclick', (e) => {
             e.preventDefault();
-            if (blobs[index].artwork.href) window.location.href = blobs[index].artwork.href;
+            if (blobs[index].artwork.href) {
+                window.location.href = blobs[index].artwork.href;
+            }
         });
     });
 
     const onMove = (e) => {
         if (!dragBlob) return;
-        const cx = e.touches ? e.touches[0].clientX : e.clientX;
-        const cy = e.touches ? e.touches[0].clientY : e.clientY;
-        const dx = cx - dragStart.x, dy = cy - dragStart.y;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        if (!isDragging && dx * dx + dy * dy > 25) isDragging = true;
+        const dx = clientX - dragStart.x;
+        const dy = clientY - dragStart.y;
+
+        if (!isDragging && (dx * dx + dy * dy) > 25) {
+            isDragging = true;
+        }
 
         if (isDragging) {
-            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            const maxY = vh - footerHeight - dragBlob.radius;
+            // Clamp position within bounds (above footer, within walls)
+            const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            const maxY = viewportHeight - footerHeight - dragBlob.radius;
+            const clampedX = Math.max(dragBlob.radius, Math.min(window.innerWidth - dragBlob.radius, clientX + dragOffset.x));
+            const clampedY = Math.max(dragBlob.radius, Math.min(maxY, clientY + dragOffset.y));
             Body.setPosition(dragBlob.body, {
-                x: Math.max(dragBlob.radius, Math.min(window.innerWidth - dragBlob.radius, cx + dragOffset.x)),
-                y: Math.max(dragBlob.radius, Math.min(maxY, cy + dragOffset.y))
+                x: clampedX,
+                y: clampedY
             });
             Body.setVelocity(dragBlob.body, { x: 0, y: 0 });
             prevDragPos.x = lastDragPos.x;
             prevDragPos.y = lastDragPos.y;
-            lastDragPos.x = cx;
-            lastDragPos.y = cy;
+            lastDragPos.x = clientX;
+            lastDragPos.y = clientY;
         }
     };
 
     const onEnd = (e) => {
         if (!dragBlob) return;
+
+        const wasTouchEvent = e.type === 'touchend';
+
+        // Release body back to dynamic
         Body.setStatic(dragBlob.body, false);
 
+        // Throw it based on recent drag velocity
         if (isDragging) {
+            const throwScale = 0.4;
             Body.setVelocity(dragBlob.body, {
-                x: (lastDragPos.x - prevDragPos.x) * 0.4,
-                y: (lastDragPos.y - prevDragPos.y) * 0.4
+                x: (lastDragPos.x - prevDragPos.x) * throwScale,
+                y: (lastDragPos.y - prevDragPos.y) * throwScale
             });
-        } else if (e.type === 'touchend' && dragIndex >= 0) {
+        } else if (wasTouchEvent && dragIndex >= 0) {
+            // Touch tap (not a drag) — detect double-tap
             const now = Date.now();
             if (now - touchLastTapTime < 400) {
-                if (blobs[dragIndex].artwork.href) window.location.href = blobs[dragIndex].artwork.href;
+                if (blobs[dragIndex].artwork.href) {
+                    window.location.href = blobs[dragIndex].artwork.href;
+                }
                 touchLastTapTime = 0;
             } else {
                 touchLastTapTime = now;
-                showHint(labels[dragIndex].element);
+                // Show hint on single tap
+                const el = labels[dragIndex].element;
+                let hint = el.querySelector('.click-hint');
+                if (!hint) {
+                    hint = document.createElement('div');
+                    hint.className = 'click-hint';
+                    hint.textContent = 'double-tap to open';
+                    el.appendChild(hint);
+                }
+                hint.style.opacity = '1';
+                clearTimeout(hint._timer);
+                hint._timer = setTimeout(() => { hint.style.opacity = '0'; }, 1200);
             }
         }
 
@@ -694,37 +922,19 @@ function initDragHandlers() {
     document.addEventListener('touchend', onEnd);
 }
 
-function showHint(el) {
-    let hint = el.querySelector('.click-hint');
-    if (!hint) {
-        hint = document.createElement('div');
-        hint.className = 'click-hint';
-        hint.textContent = 'double-tap to open';
-        el.appendChild(hint);
-    }
-    hint.style.opacity = '1';
-    clearTimeout(hint._timer);
-    hint._timer = setTimeout(() => { hint.style.opacity = '0'; }, 1200);
-}
-
+// Fix race condition: recalculate ground position after footer loads
 window.addEventListener('load', function() {
+    // Immediate update
     updateGroundPosition();
+
+    // Also update after short delays to catch late-loading footer
     setTimeout(updateGroundPosition, 100);
     setTimeout(updateGroundPosition, 500);
     setTimeout(updateGroundPosition, 1000);
-});
-
-window.addEventListener('beforeunload', function() {
-    if (!blobs.length) return;
-    sessionStorage.setItem('artBlobState', JSON.stringify({
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.visualViewport ? window.visualViewport.height : window.innerHeight,
-        count: blobs.length,
-        positions: blobs.map(b => ({ x: b.body.position.x, y: b.body.position.y, angle: b.body.angle }))
-    }));
 });
 </script>
 
 </body>
 <?php include 'footer.php'; ?>
 </html>
+
