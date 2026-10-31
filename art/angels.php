@@ -4,6 +4,7 @@
    <?php include '../meta.php'; ?>
    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+   <script src="/collections/rpc-config.php"></script>
    <script>
        document.title = "Andrew Mitchell - Angels";
        $(document).ready(function() {
@@ -88,7 +89,7 @@ details[open] summary::before {
 
     <script>
       (async function () {
-        var RPC_URL = 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd';
+        var RPC_URL = (window.RPC_URLS || {}).ethereum;
         var CONTRACT_ADDRESS = '0x1b64CF0d027f22D3aD76De00EA2fdC0aE7e53e8e';
         var TOKEN_ID = 10;
         var ABI = ['function getHtml(uint256 tokenId) view returns (string)'];

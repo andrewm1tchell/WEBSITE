@@ -6,6 +6,7 @@
     <title>Nokori Token List</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <script src="/collections/rpc-config.php"></script>
     <style>
         * {
             margin: 0;
@@ -107,7 +108,7 @@
 
     <script>
         const MANIFOLD_CREATOR = "0xF12A9C99f73ca203ec3B956E479a9E8F615C8e5F";
-        const RPC_URL = "https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd";
+        const RPC_URL = (window.RPC_URLS || {}).ethereum;
         const MANIFOLD_ABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
 
         const tokenList = document.getElementById('tokenList');

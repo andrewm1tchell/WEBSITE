@@ -3,6 +3,7 @@
 <head>
    <?php include '../meta.php'; ?>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+   <script src="/collections/rpc-config.php"></script>
    <script>
         document.title = "Andrew Mitchell - Prozac Youth";
 
@@ -146,7 +147,7 @@
     (async function() {
       const CONTRACT = '0x7e5029837a43c547cdcea2107a1e07e30d68c6d6';
       const TOKEN_ID = 4;
-      const RPC = 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd';
+      const RPC = (window.RPC_URLS || {}).ethereum;
       const ABI = ['function tokenURI(uint256 tokenId) view returns (string)'];
 
       try {

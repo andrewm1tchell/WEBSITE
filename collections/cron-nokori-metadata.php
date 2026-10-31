@@ -15,6 +15,8 @@ ini_set('max_execution_time', 600);
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
+require_once __DIR__ . '/rpc.php';
+
 $cachePath = __DIR__ . '/cache';
 $cacheFile = $cachePath . '/nokori_metadata.json';
 $cacheExpiry = 604800; // 7 days — metadata doesn't change
@@ -44,7 +46,7 @@ $rpcUrls = [
     'https://eth.llamarpc.com',
     'https://rpc.ankr.com/eth',
     'https://ethereum.publicnode.com',
-    'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd'
+    get_rpc_url('ethereum')
 ];
 
 // tokenURI(uint256) selector = 0xc87b56dd

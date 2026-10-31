@@ -58,7 +58,7 @@ $skipGrid = ['popup'];
 // RPC URLs from config + fallbacks
 $rpcUrls = [
     'ethereum' => [
-        $config['rpc']['ethereum'] ?? 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd',
+        $config['rpc']['ethereum'] ?? 'https://eth.llamarpc.com',
         'https://eth.llamarpc.com',
         'https://rpc.ankr.com/eth',
         'https://ethereum.publicnode.com',
@@ -131,6 +131,36 @@ function singleFetchTokenURI($rpcUrl, $contract, $tokenId) {
     return decodeABIString($result['result']);
 }
 
+// Fetch multiple tokenURIs in a single batched JSON-RPC request
+function batchFetchTokenURIs($rpcUrl, $contract, $tokenIds) {
+    $calls = [];
+    foreach ($tokenIds as $tokenId) {
+        $tokenIdHex = str_pad(dechex($tokenId), 64, '0', STR_PAD_LEFT);
+        $calls[] = [
+            'jsonrpc' => '2.0',
+            'id' => $tokenId,
+            'method' => 'eth_call',
+            'params' => [
+                ['to' => $contract, 'data' => '0xc87b56dd' . $tokenIdHex],
+                'latest'
+            ]
+        ];
+    }
+
+    $ch = curl_init($rpcUrl);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($calls));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 min timeout for large on-chain data
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if (!$response) return [];
+    $results = json_decode($response, true);
+    if (!is_array($results)) return [];
+
+    $uris = [];
     foreach ($results as $result) {
         if (!isset($result['id']) || !isset($result['result'])) continue;
         $decoded = decodeABIString($result['result']);
@@ -243,13 +273,12 @@ function createThumbFromData($imageData, $outputFile) {
     $white = imagecolorallocate($thumbImage, 255, 255, 255);
     imagefill($thumbImage, 0, 0, $white);
     imagecopyresampled($thumbImage, $srcImage, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
-    imagejpeg($thumbImage, $outputFile, 75);
-
+    imagejpeg($thumbImage, $outputFile, 85);
+    imagedestroy($srcImage);
+    imagedestroy($thumbImage);
 
     return true;
 }
-    imagedestroy($srcImage);
-    imagedestroy($thumbImage);
 
 function getLocalSourceFile($collectionId, $sourceIndex, $localImageMap, $baseDir) {
     $maxDim = 600;
@@ -271,8 +300,6 @@ function getLocalSourceFile($collectionId, $sourceIndex, $localImageMap, $baseDi
     return file_exists($file) ? $file : null;
 }
 
-    imagejpeg($thumbImage, $outputFile, 85);
-
 function fetchEVMMetadata($collection, $rpcUrls, $chain) {
     $contract = $collection['contract'];
     $supply = $collection['supply'];
@@ -282,53 +309,28 @@ function fetchEVMMetadata($collection, $rpcUrls, $chain) {
 
     $ids = $tokenIds ?? range($tokenIdStart, $tokenIdStart + $supply - 1);
     $allTokens = [];
-    $batchSize = 10;
+
+    $hasOnChainArt = isset($collection['features']['staticImage']) && $collection['features']['staticImage'];
+    // Use smaller batches for collections with large on-chain data
+    $batchSize = $hasOnChainArt ? 2 : 10;
     $batches = array_chunk($ids, $batchSize);
     $chainRpcs = $rpcUrls[$chain] ?? $rpcUrls['ethereum'];
 
     foreach ($batches as $batchIndex => $batch) {
         $uris = [];
 
-        // Try each RPC until one works
+        // Try batch fetch first
         foreach ($chainRpcs as $rpc) {
             $uris = batchFetchTokenURIs($rpc, $contract, $batch);
             if (!empty($uris)) break;
             usleep(500000);
         }
 
-        // Fetch metadata for each URI
+        // Fetch metadata for each URI, with single-fetch fallback
         foreach ($batch as $index => $tokenId) {
             $overallIndex = $batchIndex * $batchSize + $index;
             $displayNum = $overallIndex + 1;
 
-            if (!isset($uris[$tokenId])) {
-                $allTokens[] = [
-                    'tokenId' => $tokenId,
-                    'displayNum' => $displayNum,
-    $hasOnChainArt = isset($collection['features']['staticImage']) && $collection['features']['staticImage'];
-                    'attributes' => [],
-                    'image' => null,
-                ];
-    // Use smaller batches for collections with large on-chain data
-    $batchSize = $hasOnChainArt ? 2 : 10;
-
-            $metadata = fetchMetadataFromURI($uris[$tokenId]);
-            if (!$metadata) {
-                $allTokens[] = [
-                    'tokenId' => $tokenId,
-                    'displayNum' => $displayNum,
-        // Try batch fetch first
-                    'attributes' => [],
-                    'image' => null,
-                ];
-                continue;
-            }
-
-        // Fetch metadata for each URI, with single-fetch fallback
-                'tokenId' => $tokenId,
-                'displayNum' => $displayNum,
-                'name' => $metadata['name'] ?? ($collectionName . ' #' . $displayNum),
-                'description' => $metadata['description'] ?? '',
             // If batch didn't get this token's URI, try single fetch
             if (!isset($uris[$tokenId])) {
                 foreach ($chainRpcs as $rpc) {
@@ -341,10 +343,44 @@ function fetchEVMMetadata($collection, $rpcUrls, $chain) {
                 }
             }
 
-        // Progress log every 5 batches
+            if (!isset($uris[$tokenId])) {
                 logMsg("  WARNING: Could not fetch tokenURI for token {$tokenId} (display #{$displayNum})");
-            $done = min(($batchIndex + 1) * $batchSize, count($ids));
-            logMsg("  Fetched metadata for {$done}/" . count($ids) . " tokens");
+                $allTokens[] = [
+                    'tokenId' => $tokenId,
+                    'displayNum' => $displayNum,
+                    'attributes' => [],
+                    'image' => null,
+                ];
+                continue;
+            }
+
+            $metadata = fetchMetadataFromURI($uris[$tokenId]);
+            if (!$metadata) {
+                logMsg("  WARNING: Could not parse metadata for token {$tokenId} (display #{$displayNum})");
+                $allTokens[] = [
+                    'tokenId' => $tokenId,
+                    'displayNum' => $displayNum,
+                    'attributes' => [],
+                    'image' => null,
+                ];
+                continue;
+            }
+
+            $allTokens[] = [
+                'tokenId' => $tokenId,
+                'displayNum' => $displayNum,
+                'name' => $metadata['name'] ?? ($collectionName . ' #' . $displayNum),
+                'description' => $metadata['description'] ?? '',
+                'attributes' => $metadata['attributes'] ?? [],
+                'image' => $metadata['image'] ?? $metadata['image_url'] ?? null,
+            ];
+        }
+
+        // Progress log
+        $done = min(($batchIndex + 1) * $batchSize, count($ids));
+        if ($done % 50 < $batchSize || $batchIndex == count($batches) - 1) {
+            $withAttrs = count(array_filter($allTokens, fn($t) => !empty($t['attributes'])));
+            logMsg("  Fetched metadata for {$done}/" . count($ids) . " tokens ({$withAttrs} with attributes)");
         }
     }
 
@@ -355,7 +391,7 @@ function fetchEVMMetadata($collection, $rpcUrls, $chain) {
 
 function fetchEVMMultiContractMetadata($collection, $rpcUrls) {
     $contracts = $collection['contracts'];
-                logMsg("  WARNING: Could not parse metadata for token {$tokenId} (display #{$displayNum})");
+    $collectionName = $collection['name'];
     $chainRpcs = $rpcUrls['ethereum'];
 
     $allTokens = [];
@@ -384,10 +420,10 @@ function fetchEVMMultiContractMetadata($collection, $rpcUrls) {
                         'contract' => $contract,
                         'displayNum' => $displayNum,
                         'name' => $collectionName . ' #' . $displayNum,
-        $done = min(($batchIndex + 1) * $batchSize, count($ids));
-        if ($done % 50 < $batchSize || $batchIndex == count($batches) - 1) {
-            $withAttrs = count(array_filter($allTokens, fn($t) => !empty($t['attributes'])));
-            logMsg("  Fetched metadata for {$done}/" . count($ids) . " tokens ({$withAttrs} with attributes)");
+                        'attributes' => [],
+                        'image' => null,
+                    ];
+                    continue;
                 }
 
                 $metadata = fetchMetadataFromURI($uris[$tokenId]);

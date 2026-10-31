@@ -20,6 +20,8 @@ ob_end_clean();
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
+require_once __DIR__ . '/rpc.php';
+
 $configPath = __DIR__ . '/config.json';
 $cachePath = __DIR__ . '/cache';
 $cacheExpiry = 172800; // 48 hours — cron refreshes daily, this is a generous fallback
@@ -204,7 +206,7 @@ if ($chain === 'tezos') {
             'https://eth.llamarpc.com',
             'https://rpc.ankr.com/eth',
             'https://ethereum.publicnode.com',
-            'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd'
+            get_rpc_url('ethereum')
         ],
         'arbitrum' => [
             'https://arb1.arbitrum.io/rpc',

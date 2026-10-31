@@ -1493,6 +1493,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
     <title>{$name} #{$displayNum}</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <script src="/collections/rpc-config.php"></script>
     <style>
 {$themeCSSVars}
 
@@ -2171,10 +2172,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             year: '{$year}'
         };
 
-        const RPC_URLS = {
-            ethereum: 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd',
-            arbitrum: 'https://arb1.arbitrum.io/rpc'
-        };
+        const RPC_URLS = window.RPC_URLS || {};
 
         const ERC721_ABI = [
             'function tokenURI(uint256 tokenId) view returns (string)',

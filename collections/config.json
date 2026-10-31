@@ -352,7 +352,7 @@
     }
   ],
   "rpc": {
-    "ethereum": "https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd",
-    "arbitrum": "https://arb-mainnet.g.alchemy.com/v2/demo"
+    "ethereum": "https://mainnet.infura.io/v3/a638ad9468fb4ae0b7130373db4e66db",
+    "arbitrum": "https://arb1.arbitrum.io/rpc"
   }
 }

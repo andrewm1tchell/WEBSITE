@@ -673,6 +673,7 @@
             border-color: #4caf50;
         }
     </style>
+    <script src="/collections/rpc-config.php"></script>
 </head>
 <body>
     <script>
@@ -764,10 +765,7 @@
             year: '2023'
         };
 
-        const RPC_URLS = {
-            ethereum: 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd',
-            arbitrum: 'https://arb1.arbitrum.io/rpc'
-        };
+        const RPC_URLS = window.RPC_URLS || {};
 
         const ERC721_ABI = [
             'function tokenURI(uint256 tokenId) view returns (string)',

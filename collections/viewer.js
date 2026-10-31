@@ -3,10 +3,10 @@
  * Handles token metadata fetching and owner lookups across multiple chains
  */
 
-const RPC_URLS = {
-    ethereum: 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd',
-    arbitrum: 'https://arb-mainnet.g.alchemy.com/v2/demo'
-};
+// RPC endpoints come from the single source of truth (collections/config.json),
+// exposed to the browser via /collections/rpc-config.php (window.RPC_URLS) and
+// refreshed by loadConfig() below. No RPC URL is hardcoded here.
+let RPC_URLS = (typeof window !== 'undefined' && window.RPC_URLS) ? window.RPC_URLS : {};
 
 const ERC721_ABI = [
     'function tokenURI(uint256 tokenId) view returns (string)',
@@ -164,7 +164,11 @@ function getTokenIds(collection) {
 // Load collection config
 async function loadConfig() {
     const response = await fetch('/collections/config.json');
-    return await response.json();
+    const config = await response.json();
+    if (config && config.rpc) {
+        RPC_URLS = config.rpc;
+    }
+    return config;
 }
 
 // Find collection by ID

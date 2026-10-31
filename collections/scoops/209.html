@@ -377,6 +377,7 @@
             color: rgba(255,255,255,0.8);
         }
     </style>
+    <script src="/collections/rpc-config.php"></script>
 </head>
 <body>
     <div class="gallery-toggle">
@@ -431,10 +432,7 @@
             displayNum: 209
         };
 
-        const RPC_URLS = {
-            ethereum: 'https://mainnet.infura.io/v3/7c722c5d30fb4872879a308ddecf01cd',
-            arbitrum: 'https://arb1.arbitrum.io/rpc'
-        };
+        const RPC_URLS = window.RPC_URLS || {};
 
         const ERC721_ABI = [
             'function tokenURI(uint256 tokenId) view returns (string)',
