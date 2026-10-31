@@ -63,6 +63,12 @@ if (!$collection) {
     exit;
 }
 
+// ERC-1155 contracts don't support ownerOf — return empty owners
+if (!empty($collection['erc1155'])) {
+    echo json_encode(['owners' => (object)[], 'erc1155' => true]);
+    exit;
+}
+
 $cacheFile = $cachePath . '/owners_' . $collectionId . '.json';
 
 // Check if we have ANY cache (even if expired)

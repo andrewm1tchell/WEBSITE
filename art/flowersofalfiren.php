@@ -44,43 +44,43 @@
       <br><br>
       Additionally, the a live render of the script is available to view on <a href="https://irgeutoujrfsrznqfhcbsjfglehgnux7mlkr3hp6cfsfwssr5awq.arweave.net/RExKTdRMSyjlsCnEGSSmWQ5m0v9i1R2d_hFkW0pR6C0" title="Extension Contract">here</a>. It will give you a deeper insight into my process.
     </div>
-    <div class="light-text">
-      <p>
-        Here is a little more information about how the script works:
-      </p>
-      <ol>
-        <li>
-          Draw each organism in a black box. The organisms I use here took the last year to create. The flowers themselves are comprised of hundreds of individual curves, drawn in a series of loops. To say it simply, these loops move from ~ 0 to ~2*PI. The geometric functions of cosine, sine, and tangent are used to draw curves rotationally around the center of the flower. Of the 86 pieces, there are 7 flower genus: 24 Echinacea, 19 Adenium, 14 Zinnia, 11 Camleia, 8 Magnolia, 6 Zephyranthes, and 6 Chrysanthemum.
-        </li>
-        <li>
-          Drawing these organisms as well as any other textures to the canvas. When I say canvas, I am talking about a digital canvas on an HTML page. In HTML: &lt;canvas&gt; &lt;/canvas&gt;.
-        </li>
-        <li>
-          Trial and error, constantly changing the formula. In simplest terms, the formula for placing the flowers uses a custom scaled noise field. I found success on ignoring gravity, increasing the crowdedness of flowers towards the center of each piece.
-        </li>
-        <li>
-          Once I have a formula for placing all my digital paint strokes. I focus on creating layers. There are three main layers, background, color, and skeleton, each made up of many sub layers.
-        </li>
-      </ol>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-      <div>
-        <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/998f1d05-dd09-4723-a8a3-d4133b3df637/download+%281%29.png?format=1500w" alt="Background Layer" style="max-width: 100%;">
-        <div>Background</div>
-      </div>
-      <div>
-        <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/653218d6-f2b9-4aae-9084-349ebdbcf3fb/download+%282%29.png?format=1500w" alt="Skeleton Layer" style="max-width: 100%;">
-        <div>Color</div>
-      </div>
-      <div>
-        <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/257bcbde-43f5-407b-b692-b3bc9804e7fa/download+%283%29.png?format=1500w" alt="Color Layer" style="max-width: 100%;">
-        <div>Skeleton</div>
-      </div>
-      <div>
-        <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/d0fc1dfe-6c20-4fe3-a4c8-be3349773c06/download.png?format=1500w" alt="Final" style="max-width: 100%;">
-        <div>Final</div>
-      </div>
-    </div>
+    <!--<div class="light-text">-->
+    <!--  <p>-->
+    <!--    Here is a little more information about how the script works:-->
+    <!--  </p>-->
+    <!--  <ol>-->
+    <!--    <li>-->
+    <!--      Draw each organism in a black box. The organisms I use here took the last year to create. The flowers themselves are comprised of hundreds of individual curves, drawn in a series of loops. To say it simply, these loops move from ~ 0 to ~2*PI. The geometric functions of cosine, sine, and tangent are used to draw curves rotationally around the center of the flower. Of the 86 pieces, there are 7 flower genus: 24 Echinacea, 19 Adenium, 14 Zinnia, 11 Camleia, 8 Magnolia, 6 Zephyranthes, and 6 Chrysanthemum.-->
+    <!--    </li>-->
+    <!--    <li>-->
+    <!--      Drawing these organisms as well as any other textures to the canvas. When I say canvas, I am talking about a digital canvas on an HTML page. In HTML: &lt;canvas&gt; &lt;/canvas&gt;.-->
+    <!--    </li>-->
+    <!--    <li>-->
+    <!--      Trial and error, constantly changing the formula. In simplest terms, the formula for placing the flowers uses a custom scaled noise field. I found success on ignoring gravity, increasing the crowdedness of flowers towards the center of each piece.-->
+    <!--    </li>-->
+    <!--    <li>-->
+    <!--      Once I have a formula for placing all my digital paint strokes. I focus on creating layers. There are three main layers, background, color, and skeleton, each made up of many sub layers.-->
+    <!--    </li>-->
+    <!--  </ol>-->
+    <!--</div>-->
+    <!--<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">-->
+    <!--  <div>-->
+    <!--    <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/998f1d05-dd09-4723-a8a3-d4133b3df637/download+%281%29.png?format=1500w" alt="Background Layer" style="max-width: 100%;">-->
+    <!--    <div>Background</div>-->
+    <!--  </div>-->
+    <!--  <div>-->
+    <!--    <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/653218d6-f2b9-4aae-9084-349ebdbcf3fb/download+%282%29.png?format=1500w" alt="Skeleton Layer" style="max-width: 100%;">-->
+    <!--    <div>Color</div>-->
+    <!--  </div>-->
+    <!--  <div>-->
+    <!--    <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/257bcbde-43f5-407b-b692-b3bc9804e7fa/download+%283%29.png?format=1500w" alt="Color Layer" style="max-width: 100%;">-->
+    <!--    <div>Skeleton</div>-->
+    <!--  </div>-->
+    <!--  <div>-->
+    <!--    <img class="lazy" data-src="https://images.squarespace-cdn.com/content/v1/637d087cfeae7764854916c4/d0fc1dfe-6c20-4fe3-a4c8-be3349773c06/download.png?format=1500w" alt="Final" style="max-width: 100%;">-->
+    <!--    <div>Final</div>-->
+    <!--  </div>-->
+    <!--</div>-->
 
     <div class="art-gallery" id="imageContainer"></div>
 

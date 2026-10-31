@@ -364,6 +364,7 @@ function generateCollectionIndex($collection) {
     $hasGrid = isset($collection['hasGrid']) && $collection['hasGrid'];
     $hasGridJs = $hasGrid ? 'true' : 'false';
     $thumbBase = "/images/grid-thumbs/{$id}/";
+    $thumbExt = $collection['thumbExt'] ?? 'jpg';
     $gridAspectRatio = $collection['gridAspectRatio'] ?? '1';
     $enableTraits = ($id === 'nokori') ? 'true' : 'false';
 
@@ -1021,6 +1022,7 @@ function generateCollectionIndex($collection) {
             chain: '{$chain}',
             supply: {$supply},
             thumbBase: '{$thumbBase}',
+            thumbExt: '{$thumbExt}',
             tokenIds: {$tokenIds},
             tokenIdStart: {$tokenIdStart},
             enableTraits: {$enableTraits}
@@ -1029,6 +1031,7 @@ function generateCollectionIndex($collection) {
         const HAS_GRID = {$hasGridJs};
         const MARKETPLACE_NAME = '{$marketplaceName}';
         const WALLET_CACHE_KEY = 'connectedWallet';
+        const IS_UNTITLED = COLLECTION.id === 'untitled_2024_2026';
 
         let allTokens = [];
         let traitIndex = {};
@@ -1038,17 +1041,23 @@ function generateCollectionIndex($collection) {
         let gridBuilt = false;
         let myTokensOnly = false;
         let ownedTokens = [];
+        const VISIBLE_TOKEN_IDS = Array.isArray(COLLECTION.tokenIds) && COLLECTION.tokenIds.length > 0
+            ? COLLECTION.tokenIds
+            : Array.from({ length: COLLECTION.supply }, (_, idx) =>
+                COLLECTION.tokenIdStart ? (COLLECTION.tokenIdStart + idx) : (idx + 1)
+            );
 
         // Build list view
         function buildListView() {
             const tokenList = document.getElementById('tokenList');
             let html = '';
-            for (let i = 1; i <= COLLECTION.supply; i++) {
-                html += '<li id="token-' + i + '" onclick="goToToken(' + i + ')">' +
-                    '<span class="token-num">#' + i + '</span>' +
+            VISIBLE_TOKEN_IDS.forEach((tokenId, idx) => {
+                const displayNum = idx + 1;
+                html += '<li id="token-' + displayNum + '" onclick="goToToken(' + displayNum + ')">' +
+                    '<span class="token-num">#' + tokenId + '</span>' +
                     '<span class="owner">—</span>' +
                     '</li>';
-            }
+            });
             tokenList.innerHTML = html;
             // Load owners after building list
             loadOwners();
@@ -1083,13 +1092,14 @@ function generateCollectionIndex($collection) {
             if (gridBuilt) return;
             const grid = document.getElementById('grid');
             let html = '';
-            for (let i = 1; i <= COLLECTION.supply; i++) {
-                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
-                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
-                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
-                    '<div class="number">#' + i + '</div>' +
+            VISIBLE_TOKEN_IDS.forEach((tokenId, idx) => {
+                const displayNum = idx + 1;
+                const thumbUrl = COLLECTION.thumbBase + tokenId + '.' + (COLLECTION.thumbExt || 'jpg');
+                html += '<div class="grid-item" data-display-num="' + displayNum + '" onclick="goToToken(' + displayNum + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + tokenId + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + tokenId + '</div>' +
                     '</div>';
-            }
+            });
             grid.innerHTML = html;
             gridBuilt = true;
         }
@@ -1219,9 +1229,10 @@ function generateCollectionIndex($collection) {
             var params = new URLSearchParams(window.location.search);
             var mode = params.get('mode');
             if (!mode) return url;
-            var newUrl = new URL(url, window.location.origin);
+            // Resolve relative links (e.g. "2.html") against current page path.
+            var newUrl = new URL(url, window.location.href);
             newUrl.searchParams.set('mode', mode);
-            return newUrl.pathname + newUrl.search;
+            return (url.startsWith('/') ? newUrl.pathname : (newUrl.pathname.split('/').pop() || url)) + newUrl.search;
         }
 
         function goToToken(displayNum) {
@@ -1377,6 +1388,9 @@ function generateCollectionIndex($collection) {
         }
 
         function setGridSize(size) {
+            if (IS_UNTITLED && size === 'large') {
+                size = 'medium';
+            }
             const grid = document.getElementById('grid');
             if (!grid) return;
             grid.classList.remove('size-small', 'size-medium', 'size-large');
@@ -1394,12 +1408,17 @@ function generateCollectionIndex($collection) {
             if (saved) {
                 setGridSize(saved);
             } else {
-                setGridSize('large');
+                setGridSize(IS_UNTITLED ? 'small' : 'large');
             }
         }
 
         // Initialize
         (function init() {
+            if (IS_UNTITLED) {
+                const sizeLargeBtn = document.getElementById('sizeLarge');
+                if (sizeLargeBtn) sizeLargeBtn.style.display = 'none';
+            }
+
             // Restore wallet address
             const savedWallet = localStorage.getItem(WALLET_CACHE_KEY);
             if (savedWallet) {
@@ -1454,6 +1473,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
         'copyAsImage' => $hasCopyAsImage,
         'staticImagePath' => $staticImagePath
     ]);
+    $erc1155Json = json_encode((bool)($collection['erc1155'] ?? false));
 
     $prevLink = $prevNum ? "<a href=\"/collections/{$id}/{$prevNum}.html\" class=\"nav-btn\">← Prev</a>" : "<span class=\"nav-btn disabled\">← Prev</span>";
     $nextLink = $nextNum ? "<a href=\"/collections/{$id}/{$nextNum}.html\" class=\"nav-btn\">Next →</a>" : "<span class=\"nav-btn disabled\">Next →</span>";
@@ -2146,6 +2166,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             displayNum: {$displayNum},
             animationField: '{$animationField}',
             defaultView: '{$defaultView}',
+            erc1155: {$erc1155Json},
             features: {$featuresJson},
             year: '{$year}'
         };
@@ -2158,6 +2179,10 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
         const ERC721_ABI = [
             'function tokenURI(uint256 tokenId) view returns (string)',
             'function ownerOf(uint256 tokenId) view returns (address)'
+        ];
+
+        const ERC1155_ABI = [
+            'function uri(uint256 tokenId) view returns (string)'
         ];
 
         function shortenAddress(addr) {
@@ -2264,8 +2289,9 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
                 'xr-spatial-tracking',
                 'fullscreen',
                 'autoplay'
+                
             ].join('; ');
-            return '<iframe src="' + url + '" allowfullscreen allow="' + permissions + '" style="background:transparent;"></iframe>';
+            return '<iframe src="' + url + '" allowfullscreen allow="' + permissions + '" sandbox="allow-scripts allow-same-origin" style="background:transparent;"></iframe>';
         }
 
         function renderMedia(url, altText, container) {
@@ -2305,6 +2331,121 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             const artworkContainer = document.getElementById('artworkContainer');
             const metadataDiv = document.getElementById('metadata');
             const linksDiv = document.getElementById('links');
+
+            // ERC-1155: fetch metadata via onchain URI call, then prefer static image if configured
+            if (TOKEN.erc1155) {
+                const altText = TOKEN.collectionName + ' #' + TOKEN.displayNum;
+                window.tokenAltText = altText;
+                if (TOKEN.features.staticImage && TOKEN.features.staticImagePath) {
+                    window.tokenStaticImageUrl = TOKEN.features.staticImagePath;
+                }
+
+                let metadata = null;
+                try {
+                    const rpcUrl = RPC_URLS[TOKEN.chain];
+                    const provider = new ethers.JsonRpcProvider(rpcUrl);
+                    const contract = new ethers.Contract(TOKEN.contract, ERC1155_ABI, provider);
+                    const tokenURI = await contract.uri(TOKEN.tokenId);
+                    metadata = await fetchMetadata(tokenURI);
+                } catch (error) {
+                    console.warn('Failed to load ERC-1155 metadata from chain:', error);
+                }
+
+                let metadataImage = metadata
+                    ? getImageUrl(metadata.image || metadata.image_url || metadata.displayUri || metadata.display_uri || metadata.thumbnailUri)
+                    : null;
+                let metadataAnimation = metadata
+                    ? getImageUrl(metadata[TOKEN.animationField] || metadata.animation_url || metadata.animationUrl || metadata.artifactUri || metadata.animation)
+                    : null;
+
+                // If metadata image is actually a video file, treat it as animation.
+                if (isVideoUrl(metadataImage) && !metadataAnimation) {
+                    metadataAnimation = metadataImage;
+                    metadataImage = null;
+                }
+
+                const hasImage = !!metadataImage;
+                const hasAnimation = !!metadataAnimation;
+                const isVideo = isVideoUrl(metadataAnimation);
+
+                window.tokenImageUrl = metadataImage;
+                window.tokenAnimationUrl = metadataAnimation;
+
+                let showAnimationFirst = hasAnimation;
+                if (TOKEN.defaultView === 'image' && hasImage) {
+                    showAnimationFirst = false;
+                }
+
+                if (hasImage && hasAnimation) {
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                    if (showAnimationFirst) {
+                        document.getElementById('btnAnimation').classList.add('active');
+                    } else {
+                        document.getElementById('btnImage').classList.add('active');
+                    }
+                }
+
+                if (showAnimationFirst && hasAnimation) {
+                    if (isVideo) {
+                        artworkContainer.innerHTML = '<video src="' + metadataAnimation + '" controls autoplay loop muted playsinline></video>';
+                    } else {
+                        artworkContainer.innerHTML = createIframe(metadataAnimation);
+                    }
+                } else if (hasImage) {
+                    artworkContainer.classList.add('image-only');
+                    artworkContainer.innerHTML = '<img src="' + metadataImage + '" alt="' + altText + '">';
+                } else if (hasAnimation) {
+                    if (isVideo) {
+                        artworkContainer.innerHTML = '<video src="' + metadataAnimation + '" controls autoplay loop muted playsinline></video>';
+                    } else {
+                        artworkContainer.innerHTML = createIframe(metadataAnimation);
+                    }
+                } else if (TOKEN.features.staticImagePath) {
+                    artworkContainer.classList.add('image-only');
+                    artworkContainer.innerHTML = '<img src="' + TOKEN.features.staticImagePath + '" alt="' + altText + '">';
+                    window.tokenImageUrl = TOKEN.features.staticImagePath;
+                } else {
+                    artworkContainer.innerHTML = '<div class="error">No artwork found</div>';
+                }
+
+                const titleText = (metadata && metadata.name)
+                    ? metadata.name
+                    : TOKEN.collectionName + ' #' + TOKEN.displayNum + (TOKEN.year ? ', ' + TOKEN.year : '');
+                document.getElementById('tokenName').textContent = titleText;
+                document.getElementById('tokenDescription').innerHTML = sanitizeHtml((metadata && metadata.description) || '');
+                document.getElementById('ownerAddress').textContent = '\u2014';
+
+                if (metadata && metadata.attributes && metadata.attributes.length > 0) {
+                    const visibleAttributes = metadata.attributes.filter(attr => {
+                        if (!attr || typeof attr !== 'object') return false;
+                        const value = attr.value;
+                        if (value === null || value === undefined) return false;
+                        const strValue = String(value).trim();
+                        return strValue !== '' && strValue.toLowerCase() !== 'null' && strValue.toLowerCase() !== 'undefined';
+                    });
+
+                    const attrsHtml = visibleAttributes.map(attr =>
+                        '<div class="attribute">' +
+                        '<div class="attribute-type">' + escapeHtml(String(attr.trait_type || 'Trait')) + '</div>' +
+                        '<div class="attribute-value">' + escapeHtml(String(attr.value)) + '</div>' +
+                        '</div>'
+                    ).join('');
+                    document.getElementById('attributes').innerHTML = attrsHtml;
+                }
+
+                if (TOKEN.features.copyAsImage) {
+                    document.getElementById('btnCopy').style.display = '';
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                }
+
+                metadataDiv.style.display = 'block';
+                const marketUrl = getMarketplaceUrl();
+                const links = [];
+                if (marketUrl) links.push('<a href="' + marketUrl + '" target="_blank">OpenSea</a>');
+                links.push('<a href="' + getExplorerUrl() + '" target="_blank">Block Explorer</a>');
+                linksDiv.innerHTML = links.join('');
+                return;
+            }
 
             if (TOKEN.chain === 'tezos') {
                 // Use TzKT API for Tezos
@@ -2483,10 +2624,18 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
 
                 // Display attributes
                 if (metadata.attributes && metadata.attributes.length > 0) {
-                    const attrsHtml = metadata.attributes.map(attr =>
+                    const visibleAttributes = metadata.attributes.filter(attr => {
+                        if (!attr || typeof attr !== 'object') return false;
+                        const value = attr.value;
+                        if (value === null || value === undefined) return false;
+                        const strValue = String(value).trim();
+                        return strValue !== '' && strValue.toLowerCase() !== 'null' && strValue.toLowerCase() !== 'undefined';
+                    });
+
+                    const attrsHtml = visibleAttributes.map(attr =>
                         '<div class="attribute">' +
                             '<div class="attribute-type">' + escapeHtml(attr.trait_type || '') + '</div>' +
-                            '<div class="attribute-value">' + escapeHtml(String(attr.value) || '') + '</div>' +
+                            '<div class="attribute-value">' + escapeHtml(String(attr.value)) + '</div>' +
                         '</div>'
                     ).join('');
                     document.getElementById('attributes').innerHTML = attrsHtml;
@@ -2642,9 +2791,10 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             var params = new URLSearchParams(window.location.search);
             var mode = params.get('mode');
             if (!mode) return url;
-            var newUrl = new URL(url, window.location.origin);
+            // Resolve relative links (e.g. "2.html") against current page path.
+            var newUrl = new URL(url, window.location.href);
             newUrl.searchParams.set('mode', mode);
-            return newUrl.pathname + newUrl.search;
+            return (url.startsWith('/') ? newUrl.pathname : (newUrl.pathname.split('/').pop() || url)) + newUrl.search;
         }
 
         function buildTokenList() {
@@ -2802,6 +2952,7 @@ function generateGridPage($collection) {
 
     // Grid aspect ratio (default square, override per collection)
     $gridAspectRatio = $collection['gridAspectRatio'] ?? '1';
+    $thumbExt = $collection['thumbExt'] ?? 'jpg';
 
     // Only enable trait filtering for nokori for now
     $enableTraits = ($id === 'nokori') ? 'true' : 'false';
@@ -3273,29 +3424,37 @@ function generateGridPage($collection) {
             chain: '{$chain}',
             supply: {$supply},
             thumbBase: '{$thumbBase}',
+            thumbExt: '{$thumbExt}',
             tokenIds: {$tokenIds},
             tokenIdStart: {$tokenIdStart},
             enableTraits: {$enableTraits}
         };
 
         const MARKETPLACE_NAME = '{$marketplaceName}';
+        const IS_UNTITLED = COLLECTION.id === 'untitled_2024_2026';
 
         let allTokens = [];
         let traitIndex = {};
         let activeTraitFilters = {};
         let metadataLoaded = false;
+        const VISIBLE_TOKEN_IDS = Array.isArray(COLLECTION.tokenIds) && COLLECTION.tokenIds.length > 0
+            ? COLLECTION.tokenIds
+            : Array.from({ length: COLLECTION.supply }, (_, idx) =>
+                COLLECTION.tokenIdStart ? (COLLECTION.tokenIdStart + idx) : (idx + 1)
+            );
 
         // Build grid
         function buildGrid() {
             const grid = document.getElementById('grid');
             let html = '';
-            for (let i = 1; i <= COLLECTION.supply; i++) {
-                const thumbUrl = COLLECTION.thumbBase + i + '.jpg';
-                html += '<div class="grid-item" data-display-num="' + i + '" onclick="goToToken(' + i + ')">' +
-                    '<img src="' + thumbUrl + '" alt="#' + i + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
-                    '<div class="number">#' + i + '</div>' +
+            VISIBLE_TOKEN_IDS.forEach((tokenId, idx) => {
+                const displayNum = idx + 1;
+                const thumbUrl = COLLECTION.thumbBase + tokenId + '.' + (COLLECTION.thumbExt || 'jpg');
+                html += '<div class="grid-item" data-display-num="' + displayNum + '" onclick="goToToken(' + displayNum + ')">' +
+                    '<img src="' + thumbUrl + '" alt="#' + tokenId + '" loading="lazy" onerror="this.parentElement.classList.add(\'no-image\'); this.style.display=\'none\';">' +
+                    '<div class="number">#' + tokenId + '</div>' +
                     '</div>';
-            }
+            });
             grid.innerHTML = html;
         }
 
@@ -3462,6 +3621,9 @@ function generateGridPage($collection) {
         }
 
         function setGridSize(size) {
+            if (IS_UNTITLED && size === 'large') {
+                size = 'medium';
+            }
             const grid = document.getElementById('grid');
             grid.classList.remove('size-small', 'size-medium', 'size-large');
             if (size === 'small') grid.classList.add('size-small');
@@ -3479,11 +3641,16 @@ function generateGridPage($collection) {
             if (saved) {
                 setGridSize(saved);
             } else {
-                setGridSize('large');
+                setGridSize(IS_UNTITLED ? 'small' : 'large');
             }
         }
 
         // Initialize
+        if (IS_UNTITLED) {
+            const sizeLargeBtn = document.getElementById('sizeLarge');
+            if (sizeLargeBtn) sizeLargeBtn.style.display = 'none';
+        }
+
         buildGrid();
         restoreGridSize();
         // Metadata and filters

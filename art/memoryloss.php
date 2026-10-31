@@ -10,6 +10,25 @@
            $("a.nav-item.nav-link:contains('ART')").css("text-decoration", "underline");
        });
    </script>
+       <style>
+        .preview-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+        .preview-grid img {
+          display: block;
+          width: 100%;
+          height: auto;
+          border: 1px solid currentColor;
+        }
+        @media (max-width: 768px) {
+          .preview-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+       </style>
 </head>
 <body>
   <div class="art-page">
@@ -30,54 +49,13 @@
       $displayImages = array_slice($images, 0, 60);
     ?>
 
-    <div class="slideshow" id="slideshow">
+    <div class="preview-grid" id="slideshow">
       <?php foreach ($slideImages as $i => $num):
         $filename = sprintf("%03d.png", $num);
       ?>
-        <img src="/images/collections/memoryloss/<?php echo $filename; ?>" alt="Memory Loss #<?php echo $num; ?>"<?php if ($i === 0) echo ' class="active"'; ?>>
+        <img src="/images/collections/memoryloss/<?php echo $filename; ?>" alt="Memory Loss #<?php echo $num; ?>">
       <?php endforeach; ?>
     </div>
-    <div class="slideshow-dots" id="slideshowDots">
-      <?php foreach ($slideImages as $i => $num): ?>
-        <button class="slideshow-dot light-text<?php if ($i === 0) echo ' active'; ?>" aria-label="Go to image <?php echo $i + 1; ?>"></button>
-      <?php endforeach; ?>
-    </div>
-
-    <script>
-    (function() {
-      var slideshow = document.getElementById('slideshow');
-      var imgs = slideshow.querySelectorAll('img');
-      var dotBtns = document.querySelectorAll('#slideshowDots .slideshow-dot');
-      var currentSlide = 0;
-
-      dotBtns.forEach(function(dot, i) {
-        dot.addEventListener('click', function() { goToSlide(i); });
-      });
-
-      function goToSlide(n) {
-        imgs[currentSlide].classList.remove('active');
-        dotBtns[currentSlide].classList.remove('active');
-        currentSlide = (n + imgs.length) % imgs.length;
-        imgs[currentSlide].classList.add('active');
-        dotBtns[currentSlide].classList.add('active');
-        resetAutoPlay();
-      }
-
-      var autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-      function resetAutoPlay() {
-        clearInterval(autoPlay);
-        autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-      }
-
-      var touchStartX = 0;
-      slideshow.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
-      slideshow.addEventListener('touchend', function(e) {
-        var diff = e.changedTouches[0].screenX - touchStartX;
-        if (diff < -50) goToSlide(currentSlide + 1);
-        if (diff > 50) goToSlide(currentSlide - 1);
-      });
-    })();
-    </script>
 
     <p class="description light-text">
       256 unique pieces, created with with Javascript and <a href="https://p5js.org/" target="_blank">p5.js</a>, and minted on Ethereum.

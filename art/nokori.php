@@ -230,7 +230,7 @@ img:not(.lazy) {
         opacity: 1;
     }
     details {
-
+margin-bottom: 35px;
   padding: 1em;
     margin-top: 1em;
   color: white;
@@ -287,6 +287,26 @@ details[open] summary::before {
 .palettes-list {
   margin-top: 1em;
 }
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.preview-grid img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid currentColor;
+}
+
+@media (max-width: 768px) {
+    .preview-grid {
+        grid-template-columns: 1fr;
+    }
+}
     </style>
 </head>
 <body>
@@ -302,8 +322,7 @@ details[open] summary::before {
       </a>
     </div>
 
-    <div class="slideshow" id="slideshow"></div>
-    <div class="slideshow-dots" id="slideshowDots"></div>
+    <div class="preview-grid" id="slideshow"></div>
 
     <p class="description light-text dark-bg-transparent3" style="line-height: 1.7;">
       <em style="display: block; margin-bottom: 16px; opacity: 0.8;">All artworks are constructed purely with string concatenation. No 3rd party libraries or HTML &lt;canvas&gt; elements are used at any point.</em>
@@ -328,73 +347,73 @@ The cracks and threads carry something unspoken. I've tried to give the impressi
 
   <div style="padding: 0 30px;">
 
-<details class="light-bg-transparent dark-border-full">
-    <summary class="light-text">Implementation Details</summary>
-    <br/>
-    <div class="row">
-        <div class="col-1"></div>
-        <div class="col-10 p-0">
-            <p class="light-text text-left">
-                The Nokori project consists of several smart contracts working together.
-                <img src='../images/collections/nokori/TechnicalDiagram.png' style='width:100%;height:auto;'>
+<!--<details class="light-bg-transparent dark-border-full">-->
+<!--    <summary class="light-text">Implementation Details</summary>-->
+<!--    <br/>-->
+<!--    <div class="row">-->
+<!--        <div class="col-1"></div>-->
+<!--        <div class="col-10 p-0">-->
+<!--            <p class="light-text text-left">-->
+<!--                The Nokori project consists of several smart contracts working together.-->
+<!--                <img src='../images/collections/nokori/TechnicalDiagram.png' style='width:100%;height:auto;'>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xA8C1fc111d554C291c495a2bE71Ba58edEa208D0#code">Nokori.sol</a></span></h3>
-            <p class="light-text">The main contract that handles minting and metadata generation. Integrates with a Manifold creator contract and manages token hashes and caching settings.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xA8C1fc111d554C291c495a2bE71Ba58edEa208D0#code">Nokori.sol</a></span></h3>-->
+<!--            <p class="light-text">The main contract that handles minting and metadata generation. Integrates with a Manifold creator contract and manages token hashes and caching settings.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x9042E31F6Eb77C82Fae2d1B22C73Aef2C0db0953#code">NokoriEngine.sol</a></span></h3>
-            <p class="light-text">Entry point for art generation that converts animations and SVGs to data URIs. Delegates orchestration to the NokoriOrchestrator.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x9042E31F6Eb77C82Fae2d1B22C73Aef2C0db0953#code">NokoriEngine.sol</a></span></h3>-->
+<!--            <p class="light-text">Entry point for art generation that converts animations and SVGs to data URIs. Delegates orchestration to the NokoriOrchestrator.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x5B7512c42c772a0CD1a46982424DDCcac83e3dD4#code">NokoriOrchestrator.sol</a></span></h3>
-            <p class="light-text">Coordinates the art generation pipeline across multiple service contracts.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x5B7512c42c772a0CD1a46982424DDCcac83e3dD4#code">NokoriOrchestrator.sol</a></span></h3>-->
+<!--            <p class="light-text">Coordinates the art generation pipeline across multiple service contracts.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorEngine.sol</a></span></h3>
-            <p class="light-text">Manages color palettes and color-related functionality throughout the system. The color engine currently contains 114 color palettes created during the mint of my collection <em>Popup</em>. These palettes will exist permanently on the Ethereum blockchain and be utilizable by any other contracts.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorEngine.sol</a></span></h3>-->
+<!--            <p class="light-text">Manages color palettes and color-related functionality throughout the system. The color engine currently contains 114 color palettes created during the mint of my collection <em>Popup</em>. These palettes will exist permanently on the Ethereum blockchain and be utilizable by any other contracts.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">RandomGenerator.sol</a></span></h3>
-            <p class="light-text">Provides deterministic random number generation based on token hashes.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">RandomGenerator.sol</a></span></h3>-->
+<!--            <p class="light-text">Provides deterministic random number generation based on token hashes.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82f73c65694096d4a5d96439f850Cd0c37dd674d#code">Utils.sol</a></span></h3>
-            <p class="light-text">Provides generic helper functions for string manipulation and formatting.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82f73c65694096d4a5d96439f850Cd0c37dd674d#code">Utils.sol</a></span></h3>-->
+<!--            <p class="light-text">Provides generic helper functions for string manipulation and formatting.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorUtils.sol</a></span></h3>
-            <p class="light-text">Provides helper functions for manipulating colors.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorUtils.sol</a></span></h3>-->
+<!--            <p class="light-text">Provides helper functions for manipulating colors.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">AccessControl.sol</a></span></h3>
-            <p class="light-text">Authorization management for contract interactions.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">AccessControl.sol</a></span></h3>-->
+<!--            <p class="light-text">Authorization management for contract interactions.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x8aC08FEFA19EE282D9E60abba2Abb968C47d2E7E#code">Base64.sol</a></span></h3>
-            <p class="light-text">Base64 encoding for data URIs.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x8aC08FEFA19EE282D9E60abba2Abb968C47d2E7E#code">Base64.sol</a></span></h3>-->
+<!--            <p class="light-text">Base64 encoding for data URIs.</p>-->
 
-            <h3 class="light-text">Service Architecture</h3>
-            <p class="light-text">The project uses 14 service contracts (NokoriService_1 through NokoriService_15, skipping number 13) to handle different aspects of art generation:</p>
+<!--            <h3 class="light-text">Service Architecture</h3>-->
+<!--            <p class="light-text">The project uses 14 service contracts (NokoriService_1 through NokoriService_15, skipping number 13) to handle different aspects of art generation:</p>-->
 
-<ul class="light-text">
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x40ec3eE30046755628c993BBcdF0227E1Ac2b838#code">NokoriService_1</a></span> - Curve generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xc84664535bb1948b01d1e67a386160a493cc6608#code">NokoriService_2</a></span> - JavaScript setup generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xEEFfC31a9F3A92FeF141759Ff48EBAf7a420EAe7#code">NokoriService_3</a></span> - Texture and mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x114bAABD8E7614121b8cB272491B26F0e18702dc#code">NokoriService_4</a></span> - Cracks and ellipse mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD98b1A26E77B240a4BF39a2Bda800AEDB82E55D7#code">NokoriService_5</a></span> - Scribble mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x7485D95F33a4431931b27Cdd734B6b7e236b4ed6#code">NokoriService_6</a></span> - Displacement mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x826e6f95add1ce40740dee23ca4af927bcae84a0#code">NokoriService_7</a></span> - HTML output generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x352Ea4CaA1f2d727B7De4670c5cA3b6D369BED16#code">NokoriService_8</a></span> - Color processing</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x3E4C51f2AC8B76b22937b7e44FF8435df5be0f91#code">NokoriService_9</a></span> - Core setup and transform generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xf33427bf1e16d40ff7C74F4086B1CFBE54c9BB39#code">NokoriService_10</a></span> - Filters, colors, and attributes generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xAB32E3652681e9aA1Dae48e3E62228aF8FaDe30e#code">NokoriService_11</a></span> - Orchestration and displacement masks</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x745F5c72F81db4A339D62D660Adee4e204C60871#code">NokoriService_12</a></span> - Curve color adjustment</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x1E80098EF53E0Bb6C3A79c631AaF97AB26c2d3eA#code">NokoriService_14</a></span> - Clip path setup generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD757E3F3C2Ddb418d2c016a06997Ae6d906e2456#code">NokoriService_15</a></span> - Ellipse masks and cracks/masks coordination</li>
-</ul>
+<!--<ul class="light-text">-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x40ec3eE30046755628c993BBcdF0227E1Ac2b838#code">NokoriService_1</a></span> - Curve generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xc84664535bb1948b01d1e67a386160a493cc6608#code">NokoriService_2</a></span> - JavaScript setup generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xEEFfC31a9F3A92FeF141759Ff48EBAf7a420EAe7#code">NokoriService_3</a></span> - Texture and mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x114bAABD8E7614121b8cB272491B26F0e18702dc#code">NokoriService_4</a></span> - Cracks and ellipse mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD98b1A26E77B240a4BF39a2Bda800AEDB82E55D7#code">NokoriService_5</a></span> - Scribble mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x7485D95F33a4431931b27Cdd734B6b7e236b4ed6#code">NokoriService_6</a></span> - Displacement mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x826e6f95add1ce40740dee23ca4af927bcae84a0#code">NokoriService_7</a></span> - HTML output generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x352Ea4CaA1f2d727B7De4670c5cA3b6D369BED16#code">NokoriService_8</a></span> - Color processing</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x3E4C51f2AC8B76b22937b7e44FF8435df5be0f91#code">NokoriService_9</a></span> - Core setup and transform generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xf33427bf1e16d40ff7C74F4086B1CFBE54c9BB39#code">NokoriService_10</a></span> - Filters, colors, and attributes generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xAB32E3652681e9aA1Dae48e3E62228aF8FaDe30e#code">NokoriService_11</a></span> - Orchestration and displacement masks</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x745F5c72F81db4A339D62D660Adee4e204C60871#code">NokoriService_12</a></span> - Curve color adjustment</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x1E80098EF53E0Bb6C3A79c631AaF97AB26c2d3eA#code">NokoriService_14</a></span> - Clip path setup generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD757E3F3C2Ddb418d2c016a06997Ae6d906e2456#code">NokoriService_15</a></span> - Ellipse masks and cracks/masks coordination</li>-->
+<!--</ul>-->
 
 
 
-            <p class="light-text"><em>Note: Service 13 is intentionally skipped in the numbering sequence.</em></p>
+<!--            <p class="light-text"><em>Note: Service 13 is intentionally skipped in the numbering sequence.</em></p>-->
 
-            <br><br>
-            </p>
-        </div>
-        <div class="col-1"></div>
-    </div>
-</details>
+<!--            <br><br>-->
+<!--            </p>-->
+<!--        </div>-->
+<!--        <div class="col-1"></div>-->
+<!--    </div>-->
+<!--</details>-->
 
 
 <!--<details class="light-bg-transparent dark-border-full">-->
@@ -517,7 +536,7 @@ Below is a reverse-chronological timeline from February 2024 to now, pairing pie
 </div>
 
   <script>
-    // Hero carousel for Nokori
+        // Hero preview grid for Nokori
     (function() {
       var imageUrls = [];
       for (var i = 0; i < 401; i++) {
@@ -526,49 +545,14 @@ Below is a reverse-chronological timeline from February 2024 to now, pairing pie
 
       var shuffled = imageUrls.slice().sort(function() { return 0.5 - Math.random(); });
       var slides = shuffled.slice(0, 6);
-      var currentSlide = 0;
 
       var slideshow = document.getElementById('slideshow');
-      var dotsContainer = document.getElementById('slideshowDots');
-      var dots = [];
 
       slides.forEach(function(url, i) {
         var img = document.createElement('img');
         img.src = url;
         img.alt = 'Nokori ' + i;
-        if (i === 0) img.className = 'active';
         slideshow.appendChild(img);
-
-        var dot = document.createElement('button');
-        dot.className = 'slideshow-dot light-text' + (i === 0 ? ' active' : '');
-        dot.setAttribute('aria-label', 'Go to image ' + (i + 1));
-        dot.addEventListener('click', function() { goToSlide(i); });
-        dotsContainer.appendChild(dot);
-        dots.push(dot);
-      });
-
-      function goToSlide(n) {
-        var imgs = slideshow.querySelectorAll('img');
-        imgs[currentSlide].classList.remove('active');
-        dots[currentSlide].classList.remove('active');
-        currentSlide = (n + imgs.length) % imgs.length;
-        imgs[currentSlide].classList.add('active');
-        dots[currentSlide].classList.add('active');
-        resetAutoPlay();
-      }
-
-      var autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-      function resetAutoPlay() {
-        clearInterval(autoPlay);
-        autoPlay = setInterval(function() { goToSlide(currentSlide + 1); }, 8000);
-      }
-
-      var touchStartX = 0;
-      slideshow.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
-      slideshow.addEventListener('touchend', function(e) {
-        var diff = e.changedTouches[0].screenX - touchStartX;
-        if (diff < -50) goToSlide(currentSlide + 1);
-        if (diff > 50) goToSlide(currentSlide - 1);
       });
     })();
   </script>

@@ -759,6 +759,7 @@
             displayNum: 151,
             animationField: 'animation_url',
             defaultView: 'image',
+            erc1155: false,
             features: {"visibilitySettings":false,"staticImage":false,"copyAsImage":false,"staticImagePath":""},
             year: '2023'
         };
@@ -771,6 +772,10 @@
         const ERC721_ABI = [
             'function tokenURI(uint256 tokenId) view returns (string)',
             'function ownerOf(uint256 tokenId) view returns (address)'
+        ];
+
+        const ERC1155_ABI = [
+            'function uri(uint256 tokenId) view returns (string)'
         ];
 
         function shortenAddress(addr) {
@@ -877,8 +882,9 @@
                 'xr-spatial-tracking',
                 'fullscreen',
                 'autoplay'
+                
             ].join('; ');
-            return '<iframe src="' + url + '" allowfullscreen allow="' + permissions + '" style="background:transparent;"></iframe>';
+            return '<iframe src="' + url + '" allowfullscreen allow="' + permissions + '" sandbox="allow-scripts allow-same-origin" style="background:transparent;"></iframe>';
         }
 
         function renderMedia(url, altText, container) {
@@ -918,6 +924,121 @@
             const artworkContainer = document.getElementById('artworkContainer');
             const metadataDiv = document.getElementById('metadata');
             const linksDiv = document.getElementById('links');
+
+            // ERC-1155: fetch metadata via onchain URI call, then prefer static image if configured
+            if (TOKEN.erc1155) {
+                const altText = TOKEN.collectionName + ' #' + TOKEN.displayNum;
+                window.tokenAltText = altText;
+                if (TOKEN.features.staticImage && TOKEN.features.staticImagePath) {
+                    window.tokenStaticImageUrl = TOKEN.features.staticImagePath;
+                }
+
+                let metadata = null;
+                try {
+                    const rpcUrl = RPC_URLS[TOKEN.chain];
+                    const provider = new ethers.JsonRpcProvider(rpcUrl);
+                    const contract = new ethers.Contract(TOKEN.contract, ERC1155_ABI, provider);
+                    const tokenURI = await contract.uri(TOKEN.tokenId);
+                    metadata = await fetchMetadata(tokenURI);
+                } catch (error) {
+                    console.warn('Failed to load ERC-1155 metadata from chain:', error);
+                }
+
+                let metadataImage = metadata
+                    ? getImageUrl(metadata.image || metadata.image_url || metadata.displayUri || metadata.display_uri || metadata.thumbnailUri)
+                    : null;
+                let metadataAnimation = metadata
+                    ? getImageUrl(metadata[TOKEN.animationField] || metadata.animation_url || metadata.animationUrl || metadata.artifactUri || metadata.animation)
+                    : null;
+
+                // If metadata image is actually a video file, treat it as animation.
+                if (isVideoUrl(metadataImage) && !metadataAnimation) {
+                    metadataAnimation = metadataImage;
+                    metadataImage = null;
+                }
+
+                const hasImage = !!metadataImage;
+                const hasAnimation = !!metadataAnimation;
+                const isVideo = isVideoUrl(metadataAnimation);
+
+                window.tokenImageUrl = metadataImage;
+                window.tokenAnimationUrl = metadataAnimation;
+
+                let showAnimationFirst = hasAnimation;
+                if (TOKEN.defaultView === 'image' && hasImage) {
+                    showAnimationFirst = false;
+                }
+
+                if (hasImage && hasAnimation) {
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                    if (showAnimationFirst) {
+                        document.getElementById('btnAnimation').classList.add('active');
+                    } else {
+                        document.getElementById('btnImage').classList.add('active');
+                    }
+                }
+
+                if (showAnimationFirst && hasAnimation) {
+                    if (isVideo) {
+                        artworkContainer.innerHTML = '<video src="' + metadataAnimation + '" controls autoplay loop muted playsinline></video>';
+                    } else {
+                        artworkContainer.innerHTML = createIframe(metadataAnimation);
+                    }
+                } else if (hasImage) {
+                    artworkContainer.classList.add('image-only');
+                    artworkContainer.innerHTML = '<img src="' + metadataImage + '" alt="' + altText + '">';
+                } else if (hasAnimation) {
+                    if (isVideo) {
+                        artworkContainer.innerHTML = '<video src="' + metadataAnimation + '" controls autoplay loop muted playsinline></video>';
+                    } else {
+                        artworkContainer.innerHTML = createIframe(metadataAnimation);
+                    }
+                } else if (TOKEN.features.staticImagePath) {
+                    artworkContainer.classList.add('image-only');
+                    artworkContainer.innerHTML = '<img src="' + TOKEN.features.staticImagePath + '" alt="' + altText + '">';
+                    window.tokenImageUrl = TOKEN.features.staticImagePath;
+                } else {
+                    artworkContainer.innerHTML = '<div class="error">No artwork found</div>';
+                }
+
+                const titleText = (metadata && metadata.name)
+                    ? metadata.name
+                    : TOKEN.collectionName + ' #' + TOKEN.displayNum + (TOKEN.year ? ', ' + TOKEN.year : '');
+                document.getElementById('tokenName').textContent = titleText;
+                document.getElementById('tokenDescription').innerHTML = sanitizeHtml((metadata && metadata.description) || '');
+                document.getElementById('ownerAddress').textContent = '\u2014';
+
+                if (metadata && metadata.attributes && metadata.attributes.length > 0) {
+                    const visibleAttributes = metadata.attributes.filter(attr => {
+                        if (!attr || typeof attr !== 'object') return false;
+                        const value = attr.value;
+                        if (value === null || value === undefined) return false;
+                        const strValue = String(value).trim();
+                        return strValue !== '' && strValue.toLowerCase() !== 'null' && strValue.toLowerCase() !== 'undefined';
+                    });
+
+                    const attrsHtml = visibleAttributes.map(attr =>
+                        '<div class="attribute">' +
+                        '<div class="attribute-type">' + escapeHtml(String(attr.trait_type || 'Trait')) + '</div>' +
+                        '<div class="attribute-value">' + escapeHtml(String(attr.value)) + '</div>' +
+                        '</div>'
+                    ).join('');
+                    document.getElementById('attributes').innerHTML = attrsHtml;
+                }
+
+                if (TOKEN.features.copyAsImage) {
+                    document.getElementById('btnCopy').style.display = '';
+                    document.getElementById('viewToggle').classList.remove('hidden');
+                }
+
+                metadataDiv.style.display = 'block';
+                const marketUrl = getMarketplaceUrl();
+                const links = [];
+                if (marketUrl) links.push('<a href="' + marketUrl + '" target="_blank">OpenSea</a>');
+                links.push('<a href="' + getExplorerUrl() + '" target="_blank">Block Explorer</a>');
+                linksDiv.innerHTML = links.join('');
+                return;
+            }
 
             if (TOKEN.chain === 'tezos') {
                 // Use TzKT API for Tezos
@@ -1096,10 +1217,18 @@
 
                 // Display attributes
                 if (metadata.attributes && metadata.attributes.length > 0) {
-                    const attrsHtml = metadata.attributes.map(attr =>
+                    const visibleAttributes = metadata.attributes.filter(attr => {
+                        if (!attr || typeof attr !== 'object') return false;
+                        const value = attr.value;
+                        if (value === null || value === undefined) return false;
+                        const strValue = String(value).trim();
+                        return strValue !== '' && strValue.toLowerCase() !== 'null' && strValue.toLowerCase() !== 'undefined';
+                    });
+
+                    const attrsHtml = visibleAttributes.map(attr =>
                         '<div class="attribute">' +
                             '<div class="attribute-type">' + escapeHtml(attr.trait_type || '') + '</div>' +
-                            '<div class="attribute-value">' + escapeHtml(String(attr.value) || '') + '</div>' +
+                            '<div class="attribute-value">' + escapeHtml(String(attr.value)) + '</div>' +
                         '</div>'
                     ).join('');
                     document.getElementById('attributes').innerHTML = attrsHtml;
@@ -1255,9 +1384,10 @@
             var params = new URLSearchParams(window.location.search);
             var mode = params.get('mode');
             if (!mode) return url;
-            var newUrl = new URL(url, window.location.origin);
+            // Resolve relative links (e.g. "2.html") against current page path.
+            var newUrl = new URL(url, window.location.href);
             newUrl.searchParams.set('mode', mode);
-            return newUrl.pathname + newUrl.search;
+            return (url.startsWith('/') ? newUrl.pathname : (newUrl.pathname.split('/').pop() || url)) + newUrl.search;
         }
 
         function buildTokenList() {

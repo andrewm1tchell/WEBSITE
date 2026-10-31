@@ -1,0 +1,20 @@
+[25-Oct-2026 02:42:29 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 4
+[25-Oct-2026 02:42:29 UTC] PHP Warning:  include(): Failed opening '../meta.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 4
+[25-Oct-2026 02:42:29 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 119
+[25-Oct-2026 02:42:29 UTC] PHP Warning:  include(): Failed opening '../footer.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 119
+[28-Oct-2026 08:34:19 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 4
+[28-Oct-2026 08:34:19 UTC] PHP Warning:  include(): Failed opening '../meta.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 4
+[28-Oct-2026 08:34:19 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 119
+[28-Oct-2026 08:34:19 UTC] PHP Warning:  include(): Failed opening '../footer.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 119
+[28-Oct-2026 08:43:13 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 4
+[28-Oct-2026 08:43:13 UTC] PHP Warning:  include(): Failed opening '../meta.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 4
+[28-Oct-2026 08:43:13 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 119
+[28-Oct-2026 08:43:13 UTC] PHP Warning:  include(): Failed opening '../footer.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 119
+[30-Oct-2026 18:58:35 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 4
+[30-Oct-2026 18:58:35 UTC] PHP Warning:  include(): Failed opening '../meta.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 4
+[30-Oct-2026 18:58:35 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 119
+[30-Oct-2026 18:58:35 UTC] PHP Warning:  include(): Failed opening '../footer.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 119
+[30-Oct-2026 23:42:24 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 4
+[30-Oct-2026 23:42:24 UTC] PHP Warning:  include(): Failed opening '../meta.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 4
+[30-Oct-2026 23:42:24 UTC] PHP Warning:  include(): Failed to open stream: No such file or directory in /home/mitchel/public_html/primera.php on line 119
+[30-Oct-2026 23:42:24 UTC] PHP Warning:  include(): Failed opening '../footer.php' for inclusion (include_path='.:/opt/alt/php86/usr/share/pear:/opt/alt/php86/usr/share/php:/usr/share/pear:/usr/share/php') in /home/mitchel/public_html/primera.php on line 119

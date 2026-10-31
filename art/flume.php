@@ -52,7 +52,7 @@
     </div>
 
     <div class="contract-details light-text">
-            <p class="text-center light-text">
+            <p class="text-left light-text">
                 The main Flume contract is a Manifold <a href="https://manifold.xyz/" title="Manifold" target="_blank">contract</a>. The TokenUri of the Flume contract <a href="https://etherscan.io/address/0x1fa23513825f952afca07a603ac3f312ebee4ca9" target="_blank" title="Flume Contract">here</a> is overridden by these two extension contracts: <a target="_blank" href="https://etherscan.io/address/0x534514948a28bc76B8F2f2f6B6C1745329375710" title="Extension Contract">0x534514948a28bc76B8F2f2f6B6C1745329375710</a> and <a target="_blank" href="https://etherscan.io/address/0x9489bdad5e36d16051c93ab2200172083eeba057" title="Extension Contract">0x9489bdad5e36d16051c93ab2200172083eeba057</a>. 
                 Additionally, the mint function for these tokens was called via the custom extension contracts. These two custom contracts are thus permanently connected to the Flume Manifold contract.
                 <br>

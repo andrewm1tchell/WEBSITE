@@ -229,8 +229,19 @@ img:not(.lazy) {
     .palette-color:hover::after {
         opacity: 1;
     }
-    details {
+    .timeline-section {
+  padding: 1em;
+  margin-top: 1em;
+  color: white;
+}
 
+.timeline-heading {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin: 0;
+}
+
+details {
   padding: 1em;
     margin-top: 1em;
   color: white;
@@ -328,73 +339,73 @@ The cracks and threads carry something unspoken. I've tried to give the impressi
 
   <div style="padding: 0 30px;">
 
-<details class="light-bg-transparent dark-border-full">
-    <summary class="light-text">Implementation Details</summary>
-    <br/>
-    <div class="row">
-        <div class="col-1"></div>
-        <div class="col-10 p-0">
-            <p class="light-text text-left">
-                The Nokori project consists of several smart contracts working together.
-                <img src='../images/collections/nokori/TechnicalDiagram.png' style='width:100%;height:auto;'>
+<!--<details class="light-bg-transparent dark-border-full">-->
+<!--    <summary class="light-text">Implementation Details 🥱 (yawn)</summary>-->
+<!--    <br/>-->
+<!--    <div class="row">-->
+<!--        <div class="col-1"></div>-->
+<!--        <div class="col-10 p-0">-->
+<!--            <p class="light-text text-left">-->
+<!--                The Nokori project consists of several smart contracts working together.-->
+<!--                <img src='../images/collections/nokori/TechnicalDiagram.png' style='width:100%;height:auto;'>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xA8C1fc111d554C291c495a2bE71Ba58edEa208D0#code">Nokori.sol</a></span></h3>
-            <p class="light-text">The main contract that handles minting and metadata generation. Integrates with a Manifold creator contract and manages token hashes and caching settings.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xA8C1fc111d554C291c495a2bE71Ba58edEa208D0#code">Nokori.sol</a></span></h3>-->
+<!--            <p class="light-text">The main contract that handles minting and metadata generation. Integrates with a Manifold creator contract and manages token hashes and caching settings.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x9042E31F6Eb77C82Fae2d1B22C73Aef2C0db0953#code">NokoriEngine.sol</a></span></h3>
-            <p class="light-text">Entry point for art generation that converts animations and SVGs to data URIs. Delegates orchestration to the NokoriOrchestrator.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x9042E31F6Eb77C82Fae2d1B22C73Aef2C0db0953#code">NokoriEngine.sol</a></span></h3>-->
+<!--            <p class="light-text">Entry point for art generation that converts animations and SVGs to data URIs. Delegates orchestration to the NokoriOrchestrator.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x5B7512c42c772a0CD1a46982424DDCcac83e3dD4#code">NokoriOrchestrator.sol</a></span></h3>
-            <p class="light-text">Coordinates the art generation pipeline across multiple service contracts.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x5B7512c42c772a0CD1a46982424DDCcac83e3dD4#code">NokoriOrchestrator.sol</a></span></h3>-->
+<!--            <p class="light-text">Coordinates the art generation pipeline across multiple service contracts.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorEngine.sol</a></span></h3>
-            <p class="light-text">Manages color palettes and color-related functionality throughout the system. The color engine currently contains 114 color palettes created during the mint of my collection <em>Popup</em>. These palettes will exist permanently on the Ethereum blockchain and be utilizable by any other contracts.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorEngine.sol</a></span></h3>-->
+<!--            <p class="light-text">Manages color palettes and color-related functionality throughout the system. The color engine currently contains 114 color palettes created during the mint of my collection <em>Popup</em>. These palettes will exist permanently on the Ethereum blockchain and be utilizable by any other contracts.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">RandomGenerator.sol</a></span></h3>
-            <p class="light-text">Provides deterministic random number generation based on token hashes.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">RandomGenerator.sol</a></span></h3>-->
+<!--            <p class="light-text">Provides deterministic random number generation based on token hashes.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82f73c65694096d4a5d96439f850Cd0c37dd674d#code">Utils.sol</a></span></h3>
-            <p class="light-text">Provides generic helper functions for string manipulation and formatting.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82f73c65694096d4a5d96439f850Cd0c37dd674d#code">Utils.sol</a></span></h3>-->
+<!--            <p class="light-text">Provides generic helper functions for string manipulation and formatting.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorUtils.sol</a></span></h3>
-            <p class="light-text">Provides helper functions for manipulating colors.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xe6bF3b1c65f287B3CEB4E2Df6921a05726DFa1d8#code">ColorUtils.sol</a></span></h3>-->
+<!--            <p class="light-text">Provides helper functions for manipulating colors.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">AccessControl.sol</a></span></h3>
-            <p class="light-text">Authorization management for contract interactions.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x82995e79Cbd97C14Da3d607fB17102c38F8C00A8#code">AccessControl.sol</a></span></h3>-->
+<!--            <p class="light-text">Authorization management for contract interactions.</p>-->
 
-            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x8aC08FEFA19EE282D9E60abba2Abb968C47d2E7E#code">Base64.sol</a></span></h3>
-            <p class="light-text">Base64 encoding for data URIs.</p>
+<!--            <h3 class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x8aC08FEFA19EE282D9E60abba2Abb968C47d2E7E#code">Base64.sol</a></span></h3>-->
+<!--            <p class="light-text">Base64 encoding for data URIs.</p>-->
 
-            <h3 class="light-text">Service Architecture</h3>
-            <p class="light-text">The project uses 14 service contracts (NokoriService_1 through NokoriService_15, skipping number 13) to handle different aspects of art generation:</p>
+<!--            <h3 class="light-text">Service Architecture</h3>-->
+<!--            <p class="light-text">The project uses 14 service contracts (NokoriService_1 through NokoriService_15, skipping number 13) to handle different aspects of art generation:</p>-->
 
-<ul class="light-text">
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x40ec3eE30046755628c993BBcdF0227E1Ac2b838#code">NokoriService_1</a></span> - Curve generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xc84664535bb1948b01d1e67a386160a493cc6608#code">NokoriService_2</a></span> - JavaScript setup generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xEEFfC31a9F3A92FeF141759Ff48EBAf7a420EAe7#code">NokoriService_3</a></span> - Texture and mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x114bAABD8E7614121b8cB272491B26F0e18702dc#code">NokoriService_4</a></span> - Cracks and ellipse mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD98b1A26E77B240a4BF39a2Bda800AEDB82E55D7#code">NokoriService_5</a></span> - Scribble mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x7485D95F33a4431931b27Cdd734B6b7e236b4ed6#code">NokoriService_6</a></span> - Displacement mask generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x826e6f95add1ce40740dee23ca4af927bcae84a0#code">NokoriService_7</a></span> - HTML output generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x352Ea4CaA1f2d727B7De4670c5cA3b6D369BED16#code">NokoriService_8</a></span> - Color processing</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x3E4C51f2AC8B76b22937b7e44FF8435df5be0f91#code">NokoriService_9</a></span> - Core setup and transform generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xf33427bf1e16d40ff7C74F4086B1CFBE54c9BB39#code">NokoriService_10</a></span> - Filters, colors, and attributes generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xAB32E3652681e9aA1Dae48e3E62228aF8FaDe30e#code">NokoriService_11</a></span> - Orchestration and displacement masks</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x745F5c72F81db4A339D62D660Adee4e204C60871#code">NokoriService_12</a></span> - Curve color adjustment</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x1E80098EF53E0Bb6C3A79c631AaF97AB26c2d3eA#code">NokoriService_14</a></span> - Clip path setup generation</li>
-    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD757E3F3C2Ddb418d2c016a06997Ae6d906e2456#code">NokoriService_15</a></span> - Ellipse masks and cracks/masks coordination</li>
-</ul>
+<!--<ul class="light-text">-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x40ec3eE30046755628c993BBcdF0227E1Ac2b838#code">NokoriService_1</a></span> - Curve generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xc84664535bb1948b01d1e67a386160a493cc6608#code">NokoriService_2</a></span> - JavaScript setup generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xEEFfC31a9F3A92FeF141759Ff48EBAf7a420EAe7#code">NokoriService_3</a></span> - Texture and mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x114bAABD8E7614121b8cB272491B26F0e18702dc#code">NokoriService_4</a></span> - Cracks and ellipse mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD98b1A26E77B240a4BF39a2Bda800AEDB82E55D7#code">NokoriService_5</a></span> - Scribble mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x7485D95F33a4431931b27Cdd734B6b7e236b4ed6#code">NokoriService_6</a></span> - Displacement mask generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x826e6f95add1ce40740dee23ca4af927bcae84a0#code">NokoriService_7</a></span> - HTML output generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x352Ea4CaA1f2d727B7De4670c5cA3b6D369BED16#code">NokoriService_8</a></span> - Color processing</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x3E4C51f2AC8B76b22937b7e44FF8435df5be0f91#code">NokoriService_9</a></span> - Core setup and transform generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xf33427bf1e16d40ff7C74F4086B1CFBE54c9BB39#code">NokoriService_10</a></span> - Filters, colors, and attributes generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xAB32E3652681e9aA1Dae48e3E62228aF8FaDe30e#code">NokoriService_11</a></span> - Orchestration and displacement masks</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x745F5c72F81db4A339D62D660Adee4e204C60871#code">NokoriService_12</a></span> - Curve color adjustment</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0x1E80098EF53E0Bb6C3A79c631AaF97AB26c2d3eA#code">NokoriService_14</a></span> - Clip path setup generation</li>-->
+<!--    <li class="light-text"><span class="contract-name"><a target="_blank" class="contract-link light-text" href="https://etherscan.io/address/0xD757E3F3C2Ddb418d2c016a06997Ae6d906e2456#code">NokoriService_15</a></span> - Ellipse masks and cracks/masks coordination</li>-->
+<!--</ul>-->
 
 
 
-            <p class="light-text"><em>Note: Service 13 is intentionally skipped in the numbering sequence.</em></p>
+<!--            <p class="light-text"><em>Note: Service 13 is intentionally skipped in the numbering sequence.</em></p>-->
 
-            <br><br>
-            </p>
-        </div>
-        <div class="col-1"></div>
-    </div>
-</details>
+<!--            <br><br>-->
+<!--            </p>-->
+<!--        </div>-->
+<!--        <div class="col-1"></div>-->
+<!--    </div>-->
+<!--</details>-->
 
 
 <!--<details class="light-bg-transparent dark-border-full">-->
@@ -437,9 +448,9 @@ The cracks and threads carry something unspoken. I've tried to give the impressi
 <div class="row">
 
     <div class="col-12">
-    <details open="true" class="light-bg-transparent dark-border-full">
-          <summary class="light-text">Timeline</summary><br/>
-          <div id='scrollableParent' style="max-height: 1200px; overflow-y: auto;">
+    <section class="timeline-section light-bg-transparent dark-border-full">
+          <h2 class="timeline-heading light-text">Timeline</h2><br/>
+          <div id='scrollableParent'>
    <div class="row">
             <div class="col-1"></div>
 
@@ -460,18 +471,18 @@ Below is a reverse-chronological timeline from February 2024 to now, pairing pie
         <p class="light-text text-left" style="font-size:1em">
             I started the refactor from Javascript to Solidity here.
         </p>
-        <p class="light-text text-left">
-            Solidity is a programming language for smart contract development on Ethereum. It is not a front-end language, so you cannot just refresh the browser to view the results. When an NFT's data is requested, a Solidity function is called that returns metadata for the NFT.
-            If you do not understand what that means, please read up on the NFT <a href="https://docs.opensea.io/docs/metadata-standards" target="_blank">metadata standards</a>. Instead of using external links in the metadata, I am building an SVG dynamically, <a target="_blank" href="https://en.wikipedia.org/wiki/Base64">encoding</a> it, and returning it directly in the metadata.
-            Browsers are able to read the encoded SVG and display it.
-            Thank you to my friend Yungwknd who helped me set up a process for testing this effeciently using <a href="https://book.getfoundry.sh/" target="_blank">Foundry</a>.
-            <br>
-            <br>
-            The trickiest thing I have found with using Solidity instead of Javascript is that decimals do not work in Solidity. For example: <br> In Javascript - 3/4 = .75. <br> In Solodity - 3/4 = 0. <br>
-            Since the piece heavily requires decimals to function, I had to scale all my calculations up, and then manually convert the integer to a <a href="https://en.wikipedia.org/wiki/String_(computer_science)" target="_blank">string</a> and then append/prepend the decimal point. <br> 300/4 = 75. As a string: "."+75 = ".75". <br>
-            Since the end result of the solidity script is that is returns an SVG string, I can just encode the decimal as a string into it.
-            This is a simple explanation, in reality, some of these needs to be scaled up by 1000000 to get the level of precision necessary.
-        </p>
+        <!--<p class="light-text text-left">-->
+        <!--    Solidity is a programming language for smart contract development on Ethereum. It is not a front-end language, so you cannot just refresh the browser to view the results. When an NFT's data is requested, a Solidity function is called that returns metadata for the NFT.-->
+        <!--    If you do not understand what that means, please read up on the NFT <a href="https://docs.opensea.io/docs/metadata-standards" target="_blank">metadata standards</a>. Instead of using external links in the metadata, I am building an SVG dynamically, <a target="_blank" href="https://en.wikipedia.org/wiki/Base64">encoding</a> it, and returning it directly in the metadata.-->
+        <!--    Browsers are able to read the encoded SVG and display it.-->
+        <!--    Thank you to my friend Yungwknd who helped me set up a process for testing this effeciently using <a href="https://book.getfoundry.sh/" target="_blank">Foundry</a>.-->
+        <!--    <br>-->
+        <!--    <br>-->
+        <!--    The trickiest thing I have found with using Solidity instead of Javascript is that decimals do not work in Solidity. For example: <br> In Javascript - 3/4 = .75. <br> In Solodity - 3/4 = 0. <br>-->
+        <!--    Since the piece heavily requires decimals to function, I had to scale all my calculations up, and then manually convert the integer to a <a href="https://en.wikipedia.org/wiki/String_(computer_science)" target="_blank">string</a> and then append/prepend the decimal point. <br> 300/4 = 75. As a string: "."+75 = ".75". <br>-->
+        <!--    Since the end result of the solidity script is that is returns an SVG string, I can just encode the decimal as a string into it.-->
+        <!--    This is a simple explanation, in reality, some of these needs to be scaled up by 1000000 to get the level of precision necessary.-->
+        <!--</p>-->
     </div>
 </div>
               <hr class="light-border fade-in" style="width:100%">
@@ -511,11 +522,12 @@ Below is a reverse-chronological timeline from February 2024 to now, pairing pie
       <!-- Images will be dynamically added here -->
     </div>
   </div>
-  </details>
-  </summary>
-</div>
+  </div>
+  </section>
 </div>
 
+</div>
+<br><br><br>
   <script>
     // Hero carousel for Nokori
     (function() {
@@ -1315,6 +1327,9 @@ document.addEventListener('touchend', function(event) {
     checkSwipe();
 });
 function initializeTimeline() {
+    const navbarEl = document.querySelector('.navbar');
+    const navOffset = navbarEl ? navbarEl.offsetHeight : 0;
+
     const timelineContainer = document.createElement('div');
     timelineContainer.className = 'timeline-container';
     document.body.appendChild(timelineContainer);
@@ -1385,18 +1400,18 @@ function initializeTimeline() {
 
     // Add click handler for chevron up
     chevronUpBtn.addEventListener('click', () => {
-        scrollParent.scrollTop = 0;
+        window.scrollTo({ top: scrollParent.getBoundingClientRect().top + window.pageYOffset - navOffset });
     });
 
     // Add click handler for chevron down
     chevronDownBtn.addEventListener('click', () => {
         const bottomElement = document.getElementById('bottom');
         if (bottomElement) {
-            scrollParent.scrollTop = bottomElement.offsetTop;
+            window.scrollTo({ top: bottomElement.getBoundingClientRect().top + window.pageYOffset - navOffset });
         }
     });
 
-    // Get the parent scrollable container
+    // The timeline section itself, used for visibility checks and jump-to-top
     const scrollParent = document.getElementById('scrollableParent');
     if (!scrollParent) {
         console.warn('Scrollable parent container not found');
@@ -1426,33 +1441,36 @@ function initializeTimeline() {
             return;
         }
 
-        const scrollPosition = scrollParent.scrollTop;
-        const viewportHeight = scrollParent.clientHeight;
+        const viewportMiddle = window.innerHeight / 2;
         let activeDate = null;
+        let closestDistance = Infinity;
 
         containers.forEach(container => {
             const images = container.querySelectorAll('.placeholder');
             images.forEach(img => {
-                const dateElement = img.querySelector('.text-date');
-                if (!dateElement) return;
+                const dateNode = img.querySelector('.text-date');
+                if (!dateNode) return;
 
-                // Get position relative to the scrollable parent
-                const imgTop = img.offsetTop;
-                const imgHeight = img.offsetHeight;
+                // Position relative to the viewport, since the timeline now
+                // scrolls with the page instead of inside its own box
+                const rect = img.getBoundingClientRect();
+                if (rect.bottom < 0 || rect.top > window.innerHeight) return;
 
-                if (scrollPosition >= imgTop - viewportHeight / 2 &&
-                    scrollPosition < imgTop + imgHeight - viewportHeight / 2) {
-                    const dateText = dateElement.textContent;
-                    if (!dateText) return;
+                // Whichever image sits closest to the middle of the screen wins
+                const distance = Math.abs((rect.top + rect.bottom) / 2 - viewportMiddle);
+                if (distance >= closestDistance) return;
 
-                    try {
-                        const date = new Date(dateText);
-                        if (isNaN(date.getTime())) return;
+                const dateText = dateNode.textContent;
+                if (!dateText) return;
 
-                        activeDate = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
-                    } catch (e) {
-                        console.warn('Invalid date format:', dateText);
-                    }
+                try {
+                    const date = new Date(dateText);
+                    if (isNaN(date.getTime())) return;
+
+                    closestDistance = distance;
+                    activeDate = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+                } catch (e) {
+                    console.warn('Invalid date format:', dateText);
                 }
             });
         });
@@ -1468,11 +1486,9 @@ function initializeTimeline() {
         }
     };
 
-    // Add scroll event listener to the scrollable parent
-    scrollParent.addEventListener('scroll', updateActiveDate);
-
-    // Also listen to window scroll to check parent visibility
+    // The timeline scrolls with the page now, so track the window
     window.addEventListener('scroll', updateActiveDate);
+    window.addEventListener('resize', updateActiveDate);
 
     // Initial update (now with visibility check)
     updateActiveDate();

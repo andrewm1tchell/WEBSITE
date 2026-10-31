@@ -143,15 +143,15 @@ const ctx = canvas.getContext('2d');
 
 const aboutSegments = [
     { text: "About", size: 'header' },
-    { text: "I make art with code. I am also bad at coding. Skill is relative. Making art actually has nothing to do with coding skill. A computer could optimize every line I write but it cannot make the same mistakes I do. I write code, hit run, and the computer shows me what I commanded. My logic is filtered through a machine that doesn\u2019t even know what it is looking at (for now). Sometimes what comes back is better than what I had in my head. It feels magical at times. ", size: 'body' },
-    { text: "This may sound unorthodox to some, so let me explain. Imagine you want to create a portrait. At a basic level, there is a body and a head. You cannot just code \u201Cdraw face\u201D, that does not make any sense to the computer. You need to break it down into lines, rectangles, circles\u2026 These have x, y, z coordinates and properties (color, stroke size, etc) that the computer can understand. Every piece, from the perspective of the computer, is perfect. Iteration through human interaction is then what creates generative art. ", size: 'body' },
-    { text: "Computer Programming is based on a set of rules, however, you hear artists say art is about breaking rules. I find this kind of ironic. ", size: 'body' },
+    { text: "I make art with code. I am also bad at coding. Skill is relative. Making art actually has nothing to do with coding skill. A computer could optimize every line I write but it cannot make the same mistakes I do. I write code, hit run, and the computer shows me what I commanded. Im filtering through a machine that doesn\u2019t even know what it is looking at (for now). Sometimes what comes back is better than what I had in my head. ", size: 'body' },
+    // { text: "This may sound unorthodox to some, so let me explain. Imagine you want to create a portrait. At a basic level, there is a body and a head. You cannot just code \u201Cdraw face\u201D, that does not make any sense to the computer. You need to break it down into lines, rectangles, circles\u2026 These have x, y, z coordinates and properties (color, stroke size, etc) that the computer can understand. Every piece, from the perspective of the computer, is perfect. Iteration through human interaction is what creates the generative art. ", size: 'body' },
+    { text: "Computer Programming is based on a set of rules, but art is about breaking rules. Ironic?", size: 'body' },
     { text: "What does it mean to create generative art? ", size: 'question' },
-    { text: "It is created by a human with a computer. Programming languages allow the artist to command the computer to work. It is not created via passing prompts to an AI created by someone else. Algorithmic artists are no different than painters, we just exist in a different form. ", size: 'body' },
+    { text: "It is created by a human with a computer. Programming languages allow the artist to command the computer to work. Algorithmic artists are no different than painters, we just exist in a different form. ", size: 'body' },
     { text: "It is impossible for me to know what a computer will do until it does something. I can make predictions, but until I hit run, the outcome is undecidable. ", size: 'body' },
-    { text: "Code based art does not need to be something that technically wows someone or is a \u201CI do not understand how this was made\u201D. A lot of code based art probably will never be fully understood. I want to make art that is recognizable for what it is. Does that mean I will not make technically focused works? No, not at all. It just means that I am human and I want to work in a way that feels human. Live, experience things, open my mind. Do not get boxed into thinking that art made with code needs to be 1 + 2 = 3, it can be 1 + 2 = 4. The work would be creating a program that takes 1 + 2 and spits out 4 instead of 3. ", size: 'body' },
-    { text: "It is easy to draw straight lines, but it is hard to paint. To paint with code is not to just draw straight lines, but to emulate the human process and re-invent it. ", size: 'body' },
-    { text: "You ultimately run into a case where you have to balance program performance with your choices as an artist. I do not have an answer for that. ", size: 'body' },
+    { text: "Heres a little more about me:", size: 'question' },
+    { text: "I am Lorem ipsum dolor sit amet consectetur adipiscing elit deleniti temporibus eu eu fugiat aut culpa consequatur eiusmod sit facilis proident eiusmod consequatur possimus officia autem cumque omnis est dolore sunt mollitia reprehenderit possimus soluta dolor consectetur omnis officia mollit est in adipiscing at eu laborum duis ex elit quo vero sed officia temporibus fugiat fuga nulla voluptate irure quod ullamco cumque id iusto quod possimus anim mollitia dignissimos aliqua eligendi placeat duis optio eiusmod autem in soluta fugiat nam reprehenderit duis id duis duis officia assumenda sunt mollit nisi fugiat ullamco ea omnis autem ea praesentium ut in id in et placeat amet sint ex ex voluptate dolorum nihil in cumque nisi nam excepturi voluptas est nulla dolores sunt autem praesentium excepturi fuga et incididunt eligendi imperdiet labore culpa voluptas lorem sunt sint minus provident nobis est imperdiet non veniam praesentium id id ut qui cillum animi ut dolor vel cum officia et laborum tempor eos vero esse fuga anim maxime tempor anim elit et cillum deleniti duis consequat aliqua cupiditate nulla nulla nihil praesentium quos sint ad non magna aliquip est in at qui ex consectetur sint cillum eum quod quibusdam officia autem eu nulla molestias eligendi et exercitation voluptate non eligendi ea facere laborum quod cum sint maxime labore eligendi ad nihil culpa quidem atque ut deleniti quibusdam temporibus quo temporibus consectetur velit reprehenderit ex et dolor est placeat officia placeat et provident maxime non do id et occaecat harum rerum atque nobis qui accusamus nulla cum culpa dolore dolorum proident aute exercitation aute quis quod eos harum iusto qui laboris exercitation est pariatur et lorem iusto in proident labore mollit iusto sed facilis veniam do quibusdam sed officia commodo voluptate sunt fugiat deserunt sunt quo dolore deserunt dolorem enim nostrud blanditiis tempore harum provident et ea officia expedita ut adipiscing aute placeat pariatur quibusdam ut soluta irure ducimus et et in minim et labore molestias id nihil nobis cumque ex optio ipsum eu maxime harum vel dolor eu exercitation in et illum accusamus maxime cum in eum praesentium ea animi minus autem placeat autem consequatur et est et velit cum et est magna commodo aliqua et ex esse esse commodo in omnis duis incididunt cupidatat dignissimos nulla fugiat illum do pariatur vero fugiat anim eiusmod aliquip est", size: "body" },
+    { text: "Thank you for reading that", size: 'question' },
     { text: "CV", size: 'question' },
     { text: "• BS in Computer Science, University of Virginia ", size: 'cv' },
     { text: "• Co-founder, Mitchell and Yun Studios (with Grant Yun), 2021–present ", size: 'cv' },
@@ -164,6 +164,8 @@ const aboutSegments = [
     { text: "• Play Action Pass, Benchetler Fasani Foundation (group charity show) ", size: 'cv' },
     { text: "Selected Works ", size: 'cv-question' },
     { text: "• Nokori — 401 editions, Ethereum, 2026 ", size: 'cv' },
+    { text: "• Angels — 29 editions, Ethereum, 2026 ", size: 'cv' },
+    { text: "• Untitled 2024-2026 — 68 editions, Ethereum, 2026 ", size: 'cv' },
     { text: "• Popup — 114 editions, Ethereum, 2024 ", size: 'cv' },
     { text: "• Prozac Youth (with Tjo) — 1/1, Ethereum, 2024 ", size: 'cv' },
     { text: "• Modulo (with Rich Caldwell) — 128 editions, Ethereum/Foundation, 2024 ", size: 'cv' },
@@ -238,7 +240,7 @@ function render() {
             lh = fs * 1.6;
         }
         return {
-            prepared: prepareWithSegments(seg.text, `${fs}px Satoshi-Regular`),
+            prepared: prepareWithSegments(seg.text, `${fs}px JetBrainsMono-Regular`),
             fontSize: fs,
             lineHeight: lh,
             sizeType: seg.size
@@ -275,7 +277,7 @@ function render() {
     let y = 60;
     for (const seg of prepared) {
         if (seg.sizeType === 'question' || seg.sizeType === 'cv-question') y += seg.lineHeight;
-        ctx.font = `${seg.fontSize}px Satoshi-Regular`;
+        ctx.font = `${seg.fontSize}px JetBrainsMono-Regular`;
         ctx.fillStyle = fillColor;
         let cursor = { segmentIndex: 0, graphemeIndex: 0 };
         while (true) {

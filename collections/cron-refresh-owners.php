@@ -61,6 +61,11 @@ foreach ($config['collections'] as $collection) {
         continue;
     }
 
+    // Skip ERC-1155 collections — ownerOf is not supported
+    if (!empty($collection['erc1155'])) {
+        continue;
+    }
+
     $cacheFile = $cachePath . '/owners_' . $id . '.json';
 
     if (!file_exists($cacheFile)) {

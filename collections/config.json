@@ -1,6 +1,36 @@
 {
   "collections": [
     {
+      "id": "untitled_2024_2026",
+      "name": "Untitled 2024-2026",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xd590002ec7eef8f68f2bdda33ac2ded18d40891a",
+      "supply": 68,
+      "tokenIds": [1,2,3,71,72,73,74,9,11,12,13,14,15,76,75,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70],
+      "year": 2026,
+      "animationField": "animation_url",
+      "defaultView": "animation",
+      "thumbExt": "webp",
+      "gridAspectRatio": "3 / 4",
+      "erc1155": true
+    },
+     {
+      "id": "angels",
+      "name": "Angels",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0x9423548a957284ed17e55c37c4b6d96e5e63065f",
+      "supply": 1,
+      "tokenIds": [10],
+      "year": 2026,
+      "animationField": "animation_url",
+      "defaultView": "animation",
+      "thumbExt": "webp",
+      "gridAspectRatio": "3 / 4",
+      "erc1155": true
+    },
+    {
       "id": "nokori",
       "name": "Nokori",
       "chain": "ethereum",
