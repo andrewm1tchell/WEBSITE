@@ -47,9 +47,6 @@ if (!$collectionId) {
     exit;
 }
 
-// Allow cron to force a fresh fetch by passing &refresh=1
-$forceRefresh = isset($_GET['refresh']) && $_GET['refresh'] === '1';
-
 // Find collection in config
 $collection = null;
 foreach ($config['collections'] as $c) {
@@ -74,7 +71,7 @@ if (!empty($collection['erc1155'])) {
 $cacheFile = $cachePath . '/owners_' . $collectionId . '.json';
 
 // Check if we have ANY cache (even if expired)
-if (file_exists($cacheFile) && !$forceRefresh) {
+if (file_exists($cacheFile)) {
     $cacheData = json_decode(file_get_contents($cacheFile), true);
     if ($cacheData && isset($cacheData['timestamp']) && !empty($cacheData['owners'])) {
         $age = time() - $cacheData['timestamp'];

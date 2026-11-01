@@ -1,0 +1,7 @@
+# Maintenance scripts run from cron or the command line, never over the web.
+# Blocking the URLs doesn't affect them: cron runs them with php directly.
+# generate.php stays reachable because it asks for a password.
+RedirectMatch 404 ^/collections/(generate-thumbs|clear-cache|cron-metadata|cron-nokori-metadata|cron-refresh-owners)\.php$
+RedirectMatch 404 ^/collections/\.htgenerate$
+RedirectMatch 404 ^/collections/cache/
+RedirectMatch 404 ^/collections/error_log$

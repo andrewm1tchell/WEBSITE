@@ -28,8 +28,21 @@
       "defaultView": "animation",
       "thumbExt": "webp",
       "gridAspectRatio": "3 / 4",
-      "erc1155": true,
-      "collectorsFromMetadata": true
+      "erc1155": true
+    },
+    {
+      "id": "sunset",
+      "name": "Sunset",
+      "chain": "ethereum",
+      "chainId": 1,
+      "contract": "0xbca3c582d2b9fd66a3952427c9f65c036ca3b87a",
+      "supply": 1,
+      "tokenIdStart": 1,
+      "tokenIds": [
+        1
+      ],
+      "year": 2026,
+      "erc1155": true
     },
     {
       "id": "nokori",

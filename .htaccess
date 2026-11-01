@@ -1,0 +1,28 @@
+# Paste this at the top of the server's public_html/.htaccess. Keep anything cPanel
+# already put there, especially its PHP handler block.
+
+# Send plain HTTP visitors to HTTPS. Cloudflare reports the visitor's scheme in
+# X-Forwarded-Proto, so this can't loop whichever SSL mode Cloudflare is set to.
+RewriteEngine On
+RewriteCond %{HTTP:X-Forwarded-Proto} =http
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Files that should never be served. PHP includes read from disk, so this only blocks URLs.
+RedirectMatch 404 (^|/)error_log$
+RedirectMatch 404 \.(zip|log|lock|bak|sql|py)$
+RedirectMatch 404 ^/composer\.(json|lock)$
+RedirectMatch 404 ^/(vendor|public_ftp)/
+RedirectMatch 404 /\.git
+
+<IfModule mod_headers.c>
+    # Marketplaces iframe the art on these paths and read extensionless metadata from them,
+    # so they skip the framing and content-type rules. No Permissions-Policy either: token
+    # pages grant generative art access to sensors, camera and microphone.
+    SetEnvIf Request_URI "^/(ethereum|live|flume)/" EMBEDDABLE
+
+    Header always set Strict-Transport-Security "max-age=2592000"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-Frame-Options "SAMEORIGIN" env=!EMBEDDABLE
+    Header always set X-Content-Type-Options "nosniff" env=!EMBEDDABLE
+    Header always set Content-Security-Policy "object-src 'none'; base-uri 'self'" env=!EMBEDDABLE
+</IfModule>

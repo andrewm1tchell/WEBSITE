@@ -6,6 +6,7 @@
     <title>Untitled 2024-2026 #24</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <script src="/collections/rpc-config.php"></script>
     <style>
         :root {
             --bg: #fafafa;
@@ -473,6 +474,10 @@
             color: #fff;
         }
 
+        .no-wallet-search {
+            display: none !important;
+        }
+
         .my-tokens-toggle {
             font-size: 0.75em;
             color: var(--btn-text);
@@ -673,7 +678,6 @@
             border-color: #4caf50;
         }
     </style>
-    <script src="/collections/rpc-config.php"></script>
 </head>
 <body>
     <script>
@@ -740,8 +744,8 @@
             <span class="nav-info" onclick="toggleTokenList()" title="Click to browse all tokens">24 / 68 ▼</span>
             <a href="/collections/untitled_2024_2026/25.html" class="nav-btn">Next →</a>
         </div>
-        <input type="text" id="walletInput" class="wallet-input" placeholder="Paste wallet address..." />
-        <div class="token-nav-row" style="justify-content: center;">
+        <input type="text" id="walletInput" class="wallet-input no-wallet-search" placeholder="Paste wallet address..." />
+        <div class="token-nav-row no-wallet-search" style="justify-content: center;">
             <button class="my-tokens-toggle" id="myTokensToggle" onclick="toggleMyTokensNav()">My Tokens</button>
         </div>
         <div class="token-list-dropdown" id="tokenListDropdown">
@@ -761,6 +765,7 @@
             animationField: 'animation_url',
             defaultView: 'animation',
             erc1155: true,
+            collectorsFromMetadata: false,
             features: {"visibilitySettings":false,"staticImage":false,"copyAsImage":false,"staticImagePath":""},
             year: '2026'
         };
@@ -1383,8 +1388,12 @@
         const TOTAL_TOKENS = 68;
         const WALLET_CACHE_KEY = 'connectedWallet';
         const OWNED_TOKENS_NAV_KEY = 'ownedTokensNav_' + TOKEN.collectionId;
+        const OWNERS_URL = TOKEN.collectorsFromMetadata
+            ? '/collections/metadata-api.php?collection=' + TOKEN.collectionId + '&collectors=1'
+            : '/collections/owners.php?collection=' + TOKEN.collectionId;
         let myTokensOnly = false;
         let ownedTokens = [];
+        let ownedWallet = null;
 
         function getModeUrl(url) {
             var params = new URLSearchParams(window.location.search);
@@ -1458,7 +1467,7 @@
             btn.classList.toggle('active', myTokensOnly);
 
             // Load owned tokens if needed
-            if (ownedTokens.length === 0) {
+            if (ownedTokens.length === 0 || walletAddr !== ownedWallet) {
                 loadOwnedTokensFromServer(walletAddr);
             } else {
                 // Rebuild list with filter
@@ -1477,13 +1486,14 @@
             btn.textContent = 'Loading...';
 
             // Fetch owner data from server
-            fetch('/collections/owners.php?collection=' + TOKEN.collectionId)
+            fetch(OWNERS_URL)
                 .then(r => r.json())
                 .then(data => {
                     if (data.owners) {
                         ownedTokens = [];
+                        ownedWallet = walletAddr;
                         Object.entries(data.owners).forEach(([displayNum, owner]) => {
-                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                            if ([].concat(owner).some(addr => addr.toLowerCase() === walletAddr.toLowerCase())) {
                                 ownedTokens.push(parseInt(displayNum));
                             }
                         });

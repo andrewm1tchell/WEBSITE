@@ -21,6 +21,13 @@ if (empty($collection) || $tokenId === '') {
     exit;
 }
 
+// Token IDs are plain numbers. Anything else could walk out of the collection folder.
+if (!ctype_digit($tokenId)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid token ID']);
+    exit;
+}
+
 // Map collection names to directories
 $collections = [
     'skymeadow' => 'skymeadow',

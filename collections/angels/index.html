@@ -272,6 +272,10 @@
         }
 
         /* My Tokens feature */
+        .no-wallet-search {
+            display: none !important;
+        }
+
         .my-tokens-bar {
             display: flex;
             justify-content: center;
@@ -683,7 +687,7 @@
             <button class="view-toggle-btn" id="gridViewBtn" onclick="showGridView()">Grid</button>
         </div>
 
-        <div class="my-tokens-bar">
+        <div class="my-tokens-bar no-wallet-search">
             <input type="text" id="walletInput" class="wallet-input" placeholder="Enter wallet address..." />
             <button class="my-tokens-btn" id="myTokensBtn" onclick="toggleMyTokens()">My Tokens</button>
         </div>
@@ -721,7 +725,7 @@
             tokenIds: [10],
             tokenIdStart: 0,
             enableTraits: false,
-            collectorsFromMetadata: true
+            collectorsFromMetadata: false
         };
 
         const HAS_GRID = false;

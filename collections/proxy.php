@@ -30,21 +30,19 @@ if (empty($url)) {
 $allowedDomains = [
     'token.artblocks.io',
     'token.arbitrum.artblocks.io',
-    'api.artblocks.io',
-    'ipfs.io',
-    'gateway.ipfs.io',
-    'cloudflare-ipfs.com',
-    'arweave.net'
+    'api.artblocks.io'
 ];
 
 $parsedUrl = parse_url($url);
 $host = $parsedUrl['host'] ?? '';
 
 $isAllowed = false;
-foreach ($allowedDomains as $domain) {
-    if ($host === $domain || str_ends_with($host, '.' . $domain)) {
-        $isAllowed = true;
-        break;
+if (($parsedUrl['scheme'] ?? '') === 'https') {
+    foreach ($allowedDomains as $domain) {
+        if ($host === $domain || str_ends_with($host, '.' . $domain)) {
+            $isAllowed = true;
+            break;
+        }
     }
 }
 

@@ -136,7 +136,8 @@
 </div>
 
 <script type="module">
-let prepareWithSegments, layoutNextLine;
+let prepareWithSegments, layoutWithLines;
+let renderedWidth = 0;
 
 const canvas = document.getElementById('about-canvas');
 const ctx = canvas.getContext('2d');
@@ -193,9 +194,10 @@ const aboutSegments = [
 
 async function init() {
     try {
-        const pretext = await import('https://esm.sh/@chenglou/pretext');
+        // Pinned: 1.0.0 changed layoutNextLine's arguments, which hung this page on an unpinned import
+        const pretext = await import('https://esm.sh/@chenglou/pretext@1.0.0');
         prepareWithSegments = pretext.prepareWithSegments;
-        layoutNextLine = pretext.layoutNextLine;
+        layoutWithLines = pretext.layoutWithLines;
     } catch(e) {
         console.error('Pretext import failed:', e);
         return;
@@ -204,7 +206,15 @@ async function init() {
     await document.fonts.ready;
 
     render();
-    window.addEventListener('resize', render);
+
+    // Phones fire resize when the URL bar slides away, but text only reflows on a width change
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (document.getElementById('about-wrapper').offsetWidth !== renderedWidth) render();
+        }, 150);
+    });
 
     const toggleBtn = document.getElementById('toggleDarkLight');
     if (toggleBtn) {
@@ -219,6 +229,7 @@ function render() {
     const margin = isMobile ? 20 : 40;
     const contentWidth = totalWidth - margin * 2;
     const dpr = window.devicePixelRatio || 1;
+    renderedWidth = totalWidth;
 
     // Prepare segments
     const prepared = aboutSegments.map(seg => {
@@ -239,8 +250,9 @@ function render() {
             fs = isMobile ? 16 : 22;
             lh = fs * 1.6;
         }
+        const segPrepared = prepareWithSegments(seg.text, `${fs}px JetBrainsMono-Regular`);
         return {
-            prepared: prepareWithSegments(seg.text, `${fs}px JetBrainsMono-Regular`),
+            lines: layoutWithLines(segPrepared, contentWidth, lh).lines,
             fontSize: fs,
             lineHeight: lh,
             sizeType: seg.size
@@ -251,13 +263,7 @@ function render() {
     let measuredH = 60;
     for (const seg of prepared) {
         if (seg.sizeType === 'question' || seg.sizeType === 'cv-question') measuredH += seg.lineHeight;
-        let cursor = { segmentIndex: 0, graphemeIndex: 0 };
-        while (true) {
-            const line = layoutNextLine(seg.prepared, cursor, contentWidth);
-            if (!line) break;
-            cursor = line.end;
-            measuredH += seg.lineHeight;
-        }
+        measuredH += seg.lines.length * seg.lineHeight;
         if (seg.sizeType === 'header' || seg.sizeType === 'question' || seg.sizeType === 'cv-question') measuredH += seg.lineHeight * 0.5;
     }
     measuredH += 40;
@@ -279,12 +285,8 @@ function render() {
         if (seg.sizeType === 'question' || seg.sizeType === 'cv-question') y += seg.lineHeight;
         ctx.font = `${seg.fontSize}px JetBrainsMono-Regular`;
         ctx.fillStyle = fillColor;
-        let cursor = { segmentIndex: 0, graphemeIndex: 0 };
-        while (true) {
-            const line = layoutNextLine(seg.prepared, cursor, contentWidth);
-            if (!line) break;
+        for (const line of seg.lines) {
             ctx.fillText(line.text, margin, y);
-            cursor = line.end;
             y += seg.lineHeight;
         }
         if (seg.sizeType === 'header' || seg.sizeType === 'question' || seg.sizeType === 'cv-question') y += seg.lineHeight * 0.5;

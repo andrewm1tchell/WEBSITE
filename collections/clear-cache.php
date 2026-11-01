@@ -2,45 +2,22 @@
 /**
  * Clear Owner Cache
  *
- * Usage:
- *   CLI: php clear-cache.php [collection]
- *   Web: clear-cache.php?collection=nokori&key=YOUR_SECRET_KEY
+ * Usage: php clear-cache.php [collection]
  *
  * If no collection specified, clears all caches.
  */
 
-// Simple security key for web access (change this!)
-$secretKey = '5yth@s3cr3t';
+if (php_sapi_name() !== 'cli') {
+    http_response_code(404);
+    exit;
+}
 
 $cachePath = __DIR__ . '/cache';
-
-// Determine if running from CLI or web
-$isCli = php_sapi_name() === 'cli';
-
-if (!$isCli) {
-    header('Content-Type: application/json');
-
-    // Require secret key for web access
-    $providedKey = $_GET['key'] ?? '';
-    if ($providedKey !== $secretKey) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Invalid or missing key']);
-        exit;
-    }
-
-    $collection = $_GET['collection'] ?? null;
-} else {
-    $collection = $argv[1] ?? null;
-}
+$collection = $argv[1] ?? null;
 
 // Check if cache directory exists
 if (!is_dir($cachePath)) {
-    $msg = "Cache directory does not exist.";
-    if ($isCli) {
-        echo $msg . "\n";
-    } else {
-        echo json_encode(['message' => $msg, 'cleared' => []]);
-    }
+    echo "Cache directory does not exist.\n";
     exit;
 }
 
@@ -65,19 +42,8 @@ if ($collection) {
 }
 
 // Output results
-if ($isCli) {
-    if (count($cleared) > 0) {
-        echo "Cleared cache for: " . implode(', ', $cleared) . "\n";
-    } else {
-        echo "No cache files found" . ($collection ? " for collection: $collection" : "") . "\n";
-    }
+if (count($cleared) > 0) {
+    echo "Cleared cache for: " . implode(', ', $cleared) . "\n";
 } else {
-    echo json_encode([
-        'success' => true,
-        'cleared' => $cleared,
-        'message' => count($cleared) > 0
-            ? 'Cleared ' . count($cleared) . ' cache file(s)'
-            : 'No cache files found'
-    ]);
+    echo "No cache files found" . ($collection ? " for collection: $collection" : "") . "\n";
 }
-

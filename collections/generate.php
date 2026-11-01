@@ -3,7 +3,26 @@
  * Generate Collection Viewer Pages
  * Run: php generate.php                  — all collections
  *      php generate.php nokori angels    — only these collections
+ * Web: open generate.php and enter the password — all collections
  */
+
+// Web requests need the password. Its hash is in .htgenerate, which stays out of the public repo.
+if (isset($_SERVER['REQUEST_METHOD'])) {
+    $hashFile = __DIR__ . '/.htgenerate';
+    $hash = is_readable($hashFile) ? trim(file_get_contents($hashFile)) : '';
+    $password = $_POST['password'] ?? '';
+
+    if ($hash === '' || !is_string($password) || !password_verify($password, $hash)) {
+        http_response_code($_SERVER['REQUEST_METHOD'] === 'POST' ? 403 : 200);
+        header('X-Robots-Tag: noindex');
+        echo '<!doctype html><title>Generate</title><form method="post">'
+            . '<input type="password" name="password" autofocus required> '
+            . '<button>Generate</button></form>';
+        exit;
+    }
+
+    header('Content-Type: text/plain; charset=utf-8');
+}
 
 $targetCollections = array_slice($argv ?? [], 1);
 
@@ -339,6 +358,13 @@ JS;
 
 // ============ Template Functions ============
 
+// ERC-1155 owners can't be read from the contract, so those collections only get wallet
+// search if they have collector data. The markup stays because the page scripts read it.
+function walletSearchClass($collection) {
+    $hasWalletSearch = empty($collection['erc1155']) || !empty($collection['collectorsFromMetadata']);
+    return $hasWalletSearch ? '' : ' no-wallet-search';
+}
+
 function generateCollectionIndex($collection) {
     $id = $collection['id'];
     $name = htmlspecialchars($collection['name']);
@@ -376,6 +402,7 @@ function generateCollectionIndex($collection) {
     $gridAspectRatio = $collection['gridAspectRatio'] ?? '1';
     $enableTraits = ($id === 'nokori') ? 'true' : 'false';
     $collectorsFromMetadata = !empty($collection['collectorsFromMetadata']) ? 'true' : 'false';
+    $walletSearchClass = walletSearchClass($collection);
 
     // Marketplace name for links
     if ($chain === 'tezos') {
@@ -586,6 +613,10 @@ function generateCollectionIndex($collection) {
         }
 
         /* My Tokens feature */
+        .no-wallet-search {
+            display: none !important;
+        }
+
         .my-tokens-bar {
             display: flex;
             justify-content: center;
@@ -997,7 +1028,7 @@ function generateCollectionIndex($collection) {
             <button class="view-toggle-btn" id="gridViewBtn" onclick="showGridView()">Grid</button>
         </div>
 
-        <div class="my-tokens-bar">
+        <div class="my-tokens-bar{$walletSearchClass}">
             <input type="text" id="walletInput" class="wallet-input" placeholder="Enter wallet address..." />
             <button class="my-tokens-btn" id="myTokensBtn" onclick="toggleMyTokens()">My Tokens</button>
         </div>
@@ -1514,6 +1545,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
     ]);
     $erc1155Json = json_encode((bool)($collection['erc1155'] ?? false));
     $collectorsFromMetadataJson = json_encode(!empty($collection['collectorsFromMetadata']));
+    $walletSearchClass = walletSearchClass($collection);
 
     $prevLink =$prevNum ? "<a href=\"/collections/{$id}/{$prevNum}.html\" class=\"nav-btn\">← Prev</a>" : "<span class=\"nav-btn disabled\">← Prev</span>";
     $nextLink = $nextNum ? "<a href=\"/collections/{$id}/{$nextNum}.html\" class=\"nav-btn\">Next →</a>" : "<span class=\"nav-btn disabled\">Next →</span>";
@@ -1921,6 +1953,10 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             color: #fff;
         }
 
+        .no-wallet-search {
+            display: none !important;
+        }
+
         .my-tokens-toggle {
             font-size: 0.75em;
             color: var(--btn-text);
@@ -2187,8 +2223,8 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             <span class="nav-info" onclick="toggleTokenList()" title="Click to browse all tokens">{$displayNum} / {$total} ▼</span>
             {$nextLink}
         </div>
-        <input type="text" id="walletInput" class="wallet-input" placeholder="Paste wallet address..." />
-        <div class="token-nav-row" style="justify-content: center;">
+        <input type="text" id="walletInput" class="wallet-input{$walletSearchClass}" placeholder="Paste wallet address..." />
+        <div class="token-nav-row{$walletSearchClass}" style="justify-content: center;">
             <button class="my-tokens-toggle" id="myTokensToggle" onclick="toggleMyTokensNav()">My Tokens</button>
         </div>
         <div class="token-list-dropdown" id="tokenListDropdown">
