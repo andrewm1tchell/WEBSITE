@@ -16,6 +16,8 @@ $cachePath = $scriptDir . '/cache';
 $maxCacheAge = 86400; // 24 hours — refresh if older than this
 $delayBetween = 60;   // 60 seconds between individual collection refreshes
 
+require_once $scriptDir . '/collectors.php';
+
 if (!is_dir($cachePath)) {
     mkdir($cachePath, 0755, true);
 }
@@ -82,6 +84,20 @@ foreach ($config['collections'] as $collection) {
     $age = time() - $cacheData['timestamp'];
     if ($age >= $maxCacheAge) {
         $needsRefresh[] = $collection;
+    }
+}
+
+// Keep collectors current in the metadata cache of collections searched through it
+foreach ($config['collections'] as $collection) {
+    if (empty($collection['collectorsFromMetadata']) || !collectorsAreStale($collection, $cachePath, $maxCacheAge)) {
+        continue;
+    }
+
+    $id = $collection['id'];
+    if (refreshMetadataCollectors($collection, $cachePath)) {
+        logMsg("Metadata collectors updated: {$id}");
+    } else {
+        logMsg("Metadata collectors FAILED: {$id}");
     }
 }
 

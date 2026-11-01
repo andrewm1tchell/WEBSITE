@@ -720,13 +720,17 @@
             thumbExt: 'webp',
             tokenIds: [10],
             tokenIdStart: 0,
-            enableTraits: false
+            enableTraits: false,
+            collectorsFromMetadata: true
         };
 
         const HAS_GRID = false;
         const MARKETPLACE_NAME = 'OpenSea';
         const WALLET_CACHE_KEY = 'connectedWallet';
         const IS_UNTITLED = COLLECTION.id === 'untitled_2024_2026';
+        const OWNERS_URL = COLLECTION.collectorsFromMetadata
+            ? '/collections/metadata-api.php?collection=' + COLLECTION.id + '&collectors=1'
+            : '/collections/owners.php?collection=' + COLLECTION.id;
 
         let allTokens = [];
         let traitIndex = {};
@@ -736,6 +740,7 @@
         let gridBuilt = false;
         let myTokensOnly = false;
         let ownedTokens = [];
+        let ownedWallet = null;
         const VISIBLE_TOKEN_IDS = Array.isArray(COLLECTION.tokenIds) && COLLECTION.tokenIds.length > 0
             ? COLLECTION.tokenIds
             : Array.from({ length: COLLECTION.supply }, (_, idx) =>
@@ -760,7 +765,7 @@
 
         // Load and display all token owners
         function loadOwners() {
-            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+            fetch(OWNERS_URL)
                 .then(r => r.json())
                 .then(data => {
                     if (data.owners) {
@@ -768,10 +773,13 @@
                             const li = document.getElementById('token-' + displayNum);
                             if (li) {
                                 const ownerSpan = li.querySelector('.owner');
-                                if (ownerSpan && owner) {
-                                    const shortAddr = owner.slice(0, 6) + '...' + owner.slice(-4);
+                                const collectors = [].concat(owner); // ERC-1155 tokens have several
+                                if (ownerSpan && collectors.length > 1) {
+                                    ownerSpan.textContent = collectors.length + ' collectors';
+                                } else if (ownerSpan && collectors[0]) {
+                                    const shortAddr = collectors[0].slice(0, 6) + '...' + collectors[0].slice(-4);
                                     ownerSpan.textContent = shortAddr;
-                                    ownerSpan.title = owner;
+                                    ownerSpan.title = collectors[0];
                                 }
                             }
                         });
@@ -819,7 +827,11 @@
             document.getElementById('tokenList').style.display = 'none';
             document.getElementById('grid').style.display = '';
             document.getElementById('gridControls').style.display = 'flex';
-            document.querySelector('.my-tokens-bar').style.display = 'none';
+            if (COLLECTION.collectorsFromMetadata) {
+                applyGridFilters();
+            } else {
+                document.querySelector('.my-tokens-bar').style.display = 'none';
+            }
             document.getElementById('listViewBtn').classList.remove('active');
             document.getElementById('gridViewBtn').classList.add('active');
             document.querySelector('.container').classList.add('grid-mode');
@@ -861,7 +873,7 @@
             myTokensOnly = !myTokensOnly;
             btn.classList.toggle('active', myTokensOnly);
 
-            if (ownedTokens.length === 0 && myTokensOnly) {
+            if (myTokensOnly && walletAddr !== ownedWallet) {
                 loadOwnedTokens(walletAddr);
             } else {
                 filterTokenList();
@@ -872,13 +884,14 @@
             const btn = document.getElementById('myTokensBtn');
             btn.textContent = 'Loading...';
 
-            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+            fetch(OWNERS_URL)
                 .then(r => r.json())
                 .then(data => {
                     if (data.owners) {
                         ownedTokens = [];
+                        ownedWallet = walletAddr;
                         Object.entries(data.owners).forEach(([displayNum, owner]) => {
-                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                            if ([].concat(owner).some(addr => addr.toLowerCase() === walletAddr.toLowerCase())) {
                                 ownedTokens.push(parseInt(displayNum));
                             }
                         });
@@ -918,6 +931,10 @@
                     item.classList.remove('owned');
                 }
             });
+
+            if (gridBuilt) {
+                applyGridFilters();
+            }
         }
 
         function getModeUrl(url) {
@@ -936,6 +953,7 @@
 
         function applyGridFilters() {
             const items = document.querySelectorAll('.grid-item');
+            const collectorFilter = COLLECTION.collectorsFromMetadata && myTokensOnly;
             let visibleCount = 0;
 
             let traitPassSet = null;
@@ -960,6 +978,10 @@
                     show = false;
                 }
 
+                if (collectorFilter && !ownedTokens.includes(num)) {
+                    show = false;
+                }
+
                 if (show) {
                     item.classList.remove('hidden');
                     visibleCount++;
@@ -969,7 +991,7 @@
             });
 
             const filterInfo = document.getElementById('filterInfo');
-            if (Object.keys(activeTraitFilters).length > 0) {
+            if (collectorFilter || Object.keys(activeTraitFilters).length > 0) {
                 filterInfo.textContent = 'Showing ' + visibleCount + ' of ' + COLLECTION.supply + ' tokens';
                 filterInfo.style.display = 'block';
             } else {
@@ -1119,6 +1141,14 @@
             if (savedWallet) {
                 document.getElementById('walletInput').value = savedWallet;
             }
+
+            // Enter always searches, rather than toggling the filter off
+            document.getElementById('walletInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    myTokensOnly = false;
+                    toggleMyTokens();
+                }
+            });
 
             // Build list view
             buildListView();
