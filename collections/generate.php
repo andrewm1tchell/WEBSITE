@@ -1,8 +1,11 @@
 <?php
 /**
  * Generate Collection Viewer Pages
- * Run: php generate.php
+ * Run: php generate.php                  — all collections
+ *      php generate.php nokori angels    — only these collections
  */
+
+$targetCollections = array_slice($argv ?? [], 1);
 
 $configPath = __DIR__ . '/config.json';
 $config = json_decode(file_get_contents($configPath), true);
@@ -81,6 +84,11 @@ echo "Generating collection pages...\n\n";
 
 foreach ($config['collections'] as $collection) {
     $id = $collection['id'];
+
+    if ($targetCollections && !in_array($id, $targetCollections)) {
+        continue;
+    }
+
     $name = $collection['name'];
     $chain = $collection['chain'];
     $contract = $collection['contract'] ?? null;
@@ -367,6 +375,7 @@ function generateCollectionIndex($collection) {
     $thumbExt = $collection['thumbExt'] ?? 'jpg';
     $gridAspectRatio = $collection['gridAspectRatio'] ?? '1';
     $enableTraits = ($id === 'nokori') ? 'true' : 'false';
+    $collectorsFromMetadata = !empty($collection['collectorsFromMetadata']) ? 'true' : 'false';
 
     // Marketplace name for links
     if ($chain === 'tezos') {
@@ -1025,13 +1034,17 @@ function generateCollectionIndex($collection) {
             thumbExt: '{$thumbExt}',
             tokenIds: {$tokenIds},
             tokenIdStart: {$tokenIdStart},
-            enableTraits: {$enableTraits}
+            enableTraits: {$enableTraits},
+            collectorsFromMetadata: {$collectorsFromMetadata}
         };
 
         const HAS_GRID = {$hasGridJs};
         const MARKETPLACE_NAME = '{$marketplaceName}';
         const WALLET_CACHE_KEY = 'connectedWallet';
         const IS_UNTITLED = COLLECTION.id === 'untitled_2024_2026';
+        const OWNERS_URL = COLLECTION.collectorsFromMetadata
+            ? '/collections/metadata-api.php?collection=' + COLLECTION.id + '&collectors=1'
+            : '/collections/owners.php?collection=' + COLLECTION.id;
 
         let allTokens = [];
         let traitIndex = {};
@@ -1041,6 +1054,7 @@ function generateCollectionIndex($collection) {
         let gridBuilt = false;
         let myTokensOnly = false;
         let ownedTokens = [];
+        let ownedWallet = null;
         const VISIBLE_TOKEN_IDS = Array.isArray(COLLECTION.tokenIds) && COLLECTION.tokenIds.length > 0
             ? COLLECTION.tokenIds
             : Array.from({ length: COLLECTION.supply }, (_, idx) =>
@@ -1065,7 +1079,7 @@ function generateCollectionIndex($collection) {
 
         // Load and display all token owners
         function loadOwners() {
-            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+            fetch(OWNERS_URL)
                 .then(r => r.json())
                 .then(data => {
                     if (data.owners) {
@@ -1073,10 +1087,13 @@ function generateCollectionIndex($collection) {
                             const li = document.getElementById('token-' + displayNum);
                             if (li) {
                                 const ownerSpan = li.querySelector('.owner');
-                                if (ownerSpan && owner) {
-                                    const shortAddr = owner.slice(0, 6) + '...' + owner.slice(-4);
+                                const collectors = [].concat(owner); // ERC-1155 tokens have several
+                                if (ownerSpan && collectors.length > 1) {
+                                    ownerSpan.textContent = collectors.length + ' collectors';
+                                } else if (ownerSpan && collectors[0]) {
+                                    const shortAddr = collectors[0].slice(0, 6) + '...' + collectors[0].slice(-4);
                                     ownerSpan.textContent = shortAddr;
-                                    ownerSpan.title = owner;
+                                    ownerSpan.title = collectors[0];
                                 }
                             }
                         });
@@ -1124,7 +1141,11 @@ function generateCollectionIndex($collection) {
             document.getElementById('tokenList').style.display = 'none';
             document.getElementById('grid').style.display = '';
             document.getElementById('gridControls').style.display = 'flex';
-            document.querySelector('.my-tokens-bar').style.display = 'none';
+            if (COLLECTION.collectorsFromMetadata) {
+                applyGridFilters();
+            } else {
+                document.querySelector('.my-tokens-bar').style.display = 'none';
+            }
             document.getElementById('listViewBtn').classList.remove('active');
             document.getElementById('gridViewBtn').classList.add('active');
             document.querySelector('.container').classList.add('grid-mode');
@@ -1166,7 +1187,7 @@ function generateCollectionIndex($collection) {
             myTokensOnly = !myTokensOnly;
             btn.classList.toggle('active', myTokensOnly);
 
-            if (ownedTokens.length === 0 && myTokensOnly) {
+            if (myTokensOnly && walletAddr !== ownedWallet) {
                 loadOwnedTokens(walletAddr);
             } else {
                 filterTokenList();
@@ -1177,13 +1198,14 @@ function generateCollectionIndex($collection) {
             const btn = document.getElementById('myTokensBtn');
             btn.textContent = 'Loading...';
 
-            fetch('/collections/owners.php?collection=' + COLLECTION.id)
+            fetch(OWNERS_URL)
                 .then(r => r.json())
                 .then(data => {
                     if (data.owners) {
                         ownedTokens = [];
+                        ownedWallet = walletAddr;
                         Object.entries(data.owners).forEach(([displayNum, owner]) => {
-                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                            if ([].concat(owner).some(addr => addr.toLowerCase() === walletAddr.toLowerCase())) {
                                 ownedTokens.push(parseInt(displayNum));
                             }
                         });
@@ -1223,6 +1245,10 @@ function generateCollectionIndex($collection) {
                     item.classList.remove('owned');
                 }
             });
+
+            if (gridBuilt) {
+                applyGridFilters();
+            }
         }
 
         function getModeUrl(url) {
@@ -1241,6 +1267,7 @@ function generateCollectionIndex($collection) {
 
         function applyGridFilters() {
             const items = document.querySelectorAll('.grid-item');
+            const collectorFilter = COLLECTION.collectorsFromMetadata && myTokensOnly;
             let visibleCount = 0;
 
             let traitPassSet = null;
@@ -1265,6 +1292,10 @@ function generateCollectionIndex($collection) {
                     show = false;
                 }
 
+                if (collectorFilter && !ownedTokens.includes(num)) {
+                    show = false;
+                }
+
                 if (show) {
                     item.classList.remove('hidden');
                     visibleCount++;
@@ -1274,7 +1305,7 @@ function generateCollectionIndex($collection) {
             });
 
             const filterInfo = document.getElementById('filterInfo');
-            if (Object.keys(activeTraitFilters).length > 0) {
+            if (collectorFilter || Object.keys(activeTraitFilters).length > 0) {
                 filterInfo.textContent = 'Showing ' + visibleCount + ' of ' + COLLECTION.supply + ' tokens';
                 filterInfo.style.display = 'block';
             } else {
@@ -1425,6 +1456,14 @@ function generateCollectionIndex($collection) {
                 document.getElementById('walletInput').value = savedWallet;
             }
 
+            // Enter always searches, rather than toggling the filter off
+            document.getElementById('walletInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    myTokensOnly = false;
+                    toggleMyTokens();
+                }
+            });
+
             // Build list view
             buildListView();
 
@@ -1474,8 +1513,9 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
         'staticImagePath' => $staticImagePath
     ]);
     $erc1155Json = json_encode((bool)($collection['erc1155'] ?? false));
+    $collectorsFromMetadataJson = json_encode(!empty($collection['collectorsFromMetadata']));
 
-    $prevLink = $prevNum ? "<a href=\"/collections/{$id}/{$prevNum}.html\" class=\"nav-btn\">← Prev</a>" : "<span class=\"nav-btn disabled\">← Prev</span>";
+    $prevLink =$prevNum ? "<a href=\"/collections/{$id}/{$prevNum}.html\" class=\"nav-btn\">← Prev</a>" : "<span class=\"nav-btn disabled\">← Prev</span>";
     $nextLink = $nextNum ? "<a href=\"/collections/{$id}/{$nextNum}.html\" class=\"nav-btn\">Next →</a>" : "<span class=\"nav-btn disabled\">Next →</span>";
 
 
@@ -2168,6 +2208,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             animationField: '{$animationField}',
             defaultView: '{$defaultView}',
             erc1155: {$erc1155Json},
+            collectorsFromMetadata: {$collectorsFromMetadataJson},
             features: {$featuresJson},
             year: '{$year}'
         };
@@ -2790,8 +2831,12 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
         const TOTAL_TOKENS = {$total};
         const WALLET_CACHE_KEY = 'connectedWallet';
         const OWNED_TOKENS_NAV_KEY = 'ownedTokensNav_' + TOKEN.collectionId;
+        const OWNERS_URL = TOKEN.collectorsFromMetadata
+            ? '/collections/metadata-api.php?collection=' + TOKEN.collectionId + '&collectors=1'
+            : '/collections/owners.php?collection=' + TOKEN.collectionId;
         let myTokensOnly = false;
         let ownedTokens = [];
+        let ownedWallet = null;
 
         function getModeUrl(url) {
             var params = new URLSearchParams(window.location.search);
@@ -2865,7 +2910,7 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             btn.classList.toggle('active', myTokensOnly);
 
             // Load owned tokens if needed
-            if (ownedTokens.length === 0) {
+            if (ownedTokens.length === 0 || walletAddr !== ownedWallet) {
                 loadOwnedTokensFromServer(walletAddr);
             } else {
                 // Rebuild list with filter
@@ -2884,13 +2929,14 @@ function generateTokenPage($collection, $tokenId, $displayNum, $prevNum, $nextNu
             btn.textContent = 'Loading...';
 
             // Fetch owner data from server
-            fetch('/collections/owners.php?collection=' + TOKEN.collectionId)
+            fetch(OWNERS_URL)
                 .then(r => r.json())
                 .then(data => {
                     if (data.owners) {
                         ownedTokens = [];
+                        ownedWallet = walletAddr;
                         Object.entries(data.owners).forEach(([displayNum, owner]) => {
-                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                            if ([].concat(owner).some(addr => addr.toLowerCase() === walletAddr.toLowerCase())) {
                                 ownedTokens.push(parseInt(displayNum));
                             }
                         });

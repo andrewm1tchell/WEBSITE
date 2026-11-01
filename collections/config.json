@@ -28,7 +28,8 @@
       "defaultView": "animation",
       "thumbExt": "webp",
       "gridAspectRatio": "3 / 4",
-      "erc1155": true
+      "erc1155": true,
+      "collectorsFromMetadata": true
     },
     {
       "id": "nokori",
@@ -45,7 +46,8 @@
         "copyAsImage": true
       },
       "staticImagePath": "/images/Nokori_Images/{tokenId}.jpg",
-      "gridAspectRatio": "3 / 4"
+      "gridAspectRatio": "3 / 4",
+      "collectorsFromMetadata": true
     },
     {
       "id": "sky-meadow",

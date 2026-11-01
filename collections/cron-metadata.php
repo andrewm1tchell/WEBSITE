@@ -27,6 +27,7 @@ $cachePath = __DIR__ . '/cache';
 $thumbBaseDir = $baseDir . '/images/grid-thumbs';
 $configPath = __DIR__ . '/config.json';
 
+require_once __DIR__ . '/collectors.php';
 require_once __DIR__ . '/rpc.php';
 
 $config = json_decode(file_get_contents($configPath), true);
@@ -636,8 +637,8 @@ foreach ($collections as $collectionIndex => $collection) {
     $supply = $collection['supply'];
     $chain = $collection['chain'];
 
-    // Skip collections below minimum supply threshold
-    if ($supply < $minGridSupply) {
+    // Skip collections below minimum supply threshold, unless they need metadata for collector search
+    if ($supply < $minGridSupply && empty($collection['collectorsFromMetadata'])) {
         logMsg("SKIP: {$name} (supply={$supply}, below minimum {$minGridSupply})");
         continue;
     }
@@ -694,6 +695,10 @@ foreach ($collections as $collectionIndex => $collection) {
     }
 
     logMsg("  Fetched metadata for " . count($tokens) . " tokens");
+
+    if (!empty($collection['collectorsFromMetadata']) && !addCollectors($collection, $tokens, $cachePath)) {
+        logMsg("  WARNING: Could not fetch collectors.");
+    }
 
     // Save metadata cache
     $cacheData = [

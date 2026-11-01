@@ -6,6 +6,7 @@
     <title>Nokori #78</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <script src="/collections/rpc-config.php"></script>
     <style>
         :root {
             --bg: #fafafa;
@@ -673,7 +674,6 @@
             border-color: #4caf50;
         }
     </style>
-    <script src="/collections/rpc-config.php"></script>
 </head>
 <body>
     <script>
@@ -761,6 +761,7 @@
             animationField: 'animation_url',
             defaultView: 'animation',
             erc1155: false,
+            collectorsFromMetadata: true,
             features: {"visibilitySettings":true,"staticImage":true,"copyAsImage":true,"staticImagePath":"\/images\/Nokori_Images\/78.jpg"},
             year: '2026'
         };
@@ -1383,8 +1384,12 @@
         const TOTAL_TOKENS = 401;
         const WALLET_CACHE_KEY = 'connectedWallet';
         const OWNED_TOKENS_NAV_KEY = 'ownedTokensNav_' + TOKEN.collectionId;
+        const OWNERS_URL = TOKEN.collectorsFromMetadata
+            ? '/collections/metadata-api.php?collection=' + TOKEN.collectionId + '&collectors=1'
+            : '/collections/owners.php?collection=' + TOKEN.collectionId;
         let myTokensOnly = false;
         let ownedTokens = [];
+        let ownedWallet = null;
 
         function getModeUrl(url) {
             var params = new URLSearchParams(window.location.search);
@@ -1458,7 +1463,7 @@
             btn.classList.toggle('active', myTokensOnly);
 
             // Load owned tokens if needed
-            if (ownedTokens.length === 0) {
+            if (ownedTokens.length === 0 || walletAddr !== ownedWallet) {
                 loadOwnedTokensFromServer(walletAddr);
             } else {
                 // Rebuild list with filter
@@ -1477,13 +1482,14 @@
             btn.textContent = 'Loading...';
 
             // Fetch owner data from server
-            fetch('/collections/owners.php?collection=' + TOKEN.collectionId)
+            fetch(OWNERS_URL)
                 .then(r => r.json())
                 .then(data => {
                     if (data.owners) {
                         ownedTokens = [];
+                        ownedWallet = walletAddr;
                         Object.entries(data.owners).forEach(([displayNum, owner]) => {
-                            if (owner.toLowerCase() === walletAddr.toLowerCase()) {
+                            if ([].concat(owner).some(addr => addr.toLowerCase() === walletAddr.toLowerCase())) {
                                 ownedTokens.push(parseInt(displayNum));
                             }
                         });
